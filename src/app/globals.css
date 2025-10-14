@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --brand-black: #0f0f0f;
+  --brand-white: #f8f8f8;
+  --brand-orange: #e79c00;
+  --brand-light-gray: #f3f4f6;
 }
 
 @theme inline {
@@ -23,4 +27,52 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.bg-brand-black {
+  background-color: var(--brand-black);
+}
+
+.bg-brand-white {
+  background-color: var(--brand-white);
+}
+
+.bg-brand-light-gray {
+  background-color: var(--brand-light-gray);
+}
+
+.text-brand-white {
+  color: var(--brand-white);
+}
+
+.text-brand-black {
+  color: var(--brand-black);
+}
+
+.text-brand-orange {
+  color: var(--brand-orange);
+}
+
+.bg-brand-orange {
+  background-color: var(--brand-orange);
+}
+
+.border-brand-orange {
+  border-color: var(--brand-orange);
+}
+
+.border-brand-light-gray {
+  border-color: var(--brand-light-gray);
+}
+
+.border-brand-orange\/30 {
+  border-color: rgba(231, 156, 0, 0.3);
+}
+
+.hover\:text-brand-orange:hover {
+  color: var(--brand-orange);
+}
+
+.hover\:bg-brand-orange:hover {
+  background-color: var(--brand-orange);
 }
