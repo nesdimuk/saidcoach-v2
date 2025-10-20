@@ -1,7 +1,7 @@
 export default function About() {
   return (
     <section className="py-20 px-6">
-      <h2 className="text-3xl font-bold mb-6 text-brand.orange">Quién soy</h2>
+      <h2 className="text-3xl font-bold mb-6 text-brand-orange">Quién soy</h2>
       <p className="max-w-3xl leading-relaxed">
         Soy Marcelo Said, Profesor de Educación Física, entrenador personal online
         y coach de hábitos de salud. Cuento con un magíster en Medicina y Ciencias

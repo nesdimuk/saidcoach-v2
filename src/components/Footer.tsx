@@ -1,22 +1,21 @@
-import Link from "next/link";
+import { WHATSAPP_LINK } from "@/lib/constants";
 
 export default function Footer() {
   return (
-    <footer className="bg-brand.black text-brand.white text-center py-6 mt-12 border-t border-brand.orange/30">
+    <footer className="bg-brand-black text-brand-white text-center py-6 mt-12 border-t border-brand-orange/30">
       <p className="mb-2">
         © {new Date().getFullYear()} SaidCoach. Todos los derechos reservados.
       </p>
       <p>
-        <Link
-          href="https://wa.me/56995995678"
+        <a
+          href={WHATSAPP_LINK}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand.orange hover:underline"
+          className="text-brand-orange hover:underline"
         >
           Escríbeme por WhatsApp
-        </Link>
+        </a>
       </p>
     </footer>
   );
 }
-
