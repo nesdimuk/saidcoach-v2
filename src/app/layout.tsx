@@ -1,7 +1,13 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "SaidCoach",
@@ -15,7 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="bg-brand-black text-brand-white flex flex-col min-h-screen">
+      <body
+        className={`${montserrat.className} bg-brand-black text-brand-white flex flex-col min-h-screen`}
+      >
         <Navbar />
         <main className="flex-grow">{children}</main>
         <Footer />
