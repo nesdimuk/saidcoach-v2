@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/servicios", label: "Servicios" },
   { href: "/contacto", label: "Contacto" },
   { href: "/test-riesgo", label: "Test de Riesgo" },
+  { href: "/competencia", label: "Competencia" },
 ];
 
 export default function Navbar() {
