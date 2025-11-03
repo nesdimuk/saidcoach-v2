@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 
 type AuthChangePayload = {
-  event: string;
-  session: unknown;
+  event: AuthChangeEvent;
+  session: Session | null;
 };
 
 export async function POST(request: Request) {
@@ -12,14 +13,14 @@ export async function POST(request: Request) {
 
   try {
     payload = await request.json();
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
   }
 
   const { event, session } = payload;
 
-  if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-    const { error } = await supabase.auth.setSession(session as any);
+  if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+    const { error } = await supabase.auth.setSession(session);
     if (error) {
       return NextResponse.json({ error: "No se pudo establecer la sesión." }, { status: 500 });
     }

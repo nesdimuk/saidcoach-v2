@@ -49,7 +49,7 @@ export default function LoginPage() {
           setMessage("Revisa tu bandeja para confirmar la cuenta y luego inicia sesión.");
         }
       }
-    } catch (submitError) {
+    } catch {
       setError("Ocurrió un error inesperado. Intenta nuevamente.");
     } finally {
       setSubmitting(false);
