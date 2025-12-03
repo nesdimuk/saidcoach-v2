@@ -1,4 +1,4 @@
-import PoliticaDePrivacidad from "../../../pages/politica-de-privacidad";
+import PoliticaDePrivacidad from "@/components/PoliticaPrivacidad";
 
 export const metadata = {
   title: "Política de Privacidad | SaidCoach",
