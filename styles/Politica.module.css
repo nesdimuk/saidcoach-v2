@@ -1,0 +1,49 @@
+.page-container {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  line-height: 1.7;
+}
+
+.title {
+  color: var(--brand-orange);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: var(--brand-orange);
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 24px 0 12px;
+}
+
+.paragraph {
+  margin: 0 0 16px;
+  font-size: 1rem;
+}
+
+.list {
+  margin: 0 0 16px 18px;
+  padding: 0;
+  list-style: disc;
+  display: grid;
+  gap: 8px;
+}
+
+.link {
+  color: var(--brand-black);
+  text-decoration: underline;
+  text-decoration-color: var(--brand-orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  color: var(--brand-orange);
+}
