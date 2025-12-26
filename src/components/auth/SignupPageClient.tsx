@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSupabaseClient } from "@/providers/SupabaseProvider";
 
-export default function SignupPage() {
+export default function SignupPageClient() {
   const supabase = useSupabaseClient();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const companySlug = searchParams.get("company") ?? "";
+  const companySlug = searchParams?.get("company") ?? "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
