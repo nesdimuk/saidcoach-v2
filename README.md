@@ -1,113 +1,113 @@
-# SaidCoach Platform Enhancements
+# Corporate Wellness Challenge Platform
 
-Este repositorio contiene el sitio web de SaidCoach (Next.js + App Router) junto con la nueva funcionalidad de competencias basada en Supabase y un contador de sentadillas con visión computacional.
+Next.js 15 + Supabase implementation of the 90‑day multi‑company wellness challenge. The app router serves the corporate challenge dashboard, leaderboards, authentication and legacy marketing pages; Supabase provides auth, row-level security, SQL functions and storage for nutrition photos.
 
-## Contenido principal
+## Highlights
 
-- `src/app/**/*.tsx`: páginas, layouts y rutas API implementadas con el App Router de Next.js.
-- `src/components/*`: componentes de UI compartidos (Navbar, Footer, layouts).
-- `src/lib/supabase/*`: utilidades para crear clientes de Supabase en navegador, servidor y modo service.
-- `src/providers/SupabaseProvider.tsx`: proveedor React que expone el cliente, maneja sesiones y sincroniza cookies.
-- `public/squat-counter/*`: aplicación web estática (HTML/CSS/JS) del contador de sentadillas.
-- `.env.local`: variables de entorno (no se versiona; copiar desde `.env.local.example`).
+- **Multi-company onboarding:** `/company/[slug]` pages link new users directly to their employer’s challenge and run `/api/join-company` after login/sign-up.
+- **Today-only habits:** server time (default `America/Santiago`) gates movement, nutrition, lesson, meditation and gratitude logs. Users cannot backfill.
+- **Automatic streaks:** recalculated after every pointful action; enforcing the “4-of-5 habits per day” rule and zeroing streaks when a day is missed.
+- **Leaderboards:** RPC-backed daily/weekly/monthly rankings scoped by company, exposed via `/api/get-leaderboard` and `/ranking`.
+- **Nutrition storage:** photos stream straight into the `nutrition_photos` bucket with fine-grained RLS and optional early-bird bonus before 09:00.
+- **Minimal UX:** dashboard checklist shows only today’s actions, buttons that immediately perform the action, and badge callouts for bonuses.
 
-## Supabase
+## Environment Variables
 
-1. Crear un proyecto en Supabase y anotar:
-   - Project URL (`https://<project>.supabase.co`)
-   - `anon` key y `service_role` key.
-2. En el SQL editor ejecutar:
-   ```sql
-   create table squat_sessions (
-     id uuid primary key default gen_random_uuid(),
-     user_id uuid references auth.users(id) on delete cascade,
-     reps integer not null,
-     recorded_at timestamptz not null default now()
-   );
+Create `.env.local` (and replicate in Vercel):
 
-  create index squat_sessions_user_id_recorded_at_idx
-     on squat_sessions (user_id, recorded_at desc);
-
-   create or replace function get_weekly_squat_leaderboard()
-   returns table (
-     user_id uuid,
-     total_reps integer
-   )
-   language sql
-   as $$
-   select
-     user_id,
-     sum(reps) as total_reps
-   from squat_sessions
-   where recorded_at >= now() - interval '7 days'
-   group by user_id
-   order by total_reps desc;
-   $$;
-
-   alter table squat_sessions enable row level security;
-
-   create policy "Users insert own sessions"
-   on squat_sessions
-   for insert
-   with check (auth.uid() = user_id);
-
-   create policy "Leaderboard readable"
-   on squat_sessions
-   for select
-   using (true);
-   ```
-3. Configurar URLs en *Authentication → URL Configuration*:
-   - Site URL: `https://www.saidcoach.com`
-   - Additional redirect URLs: `https://www.saidcoach.com/auth/callback`, `http://localhost:3000`, `http://localhost:3000/auth/callback`
-
-## Variables de entorno
-
-Crear `.env.local` (en producción añadir las mismas variables en Vercel):
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-```
-
-## Páginas y rutas clave
-
-| Ruta | Descripción |
+| Variable | Description |
 | --- | --- |
-| `/login` | Formulario para registro e inicio de sesión (Supabase Auth). |
-| `/competencia` | Leaderboard semanal, acciones rápidas y enlace al contador. |
-| `/portal-alumnos` | Embebido del portal PT Distinction. |
-| `/guia-nutricional` | Formulario de Google incrustado. |
-| `/api/session` | Devuelve usuario autenticado (usado por el contador). |
-| `/api/squats` | `POST` registra repeticiones; `GET` devuelve leaderboard enriquecido con emails. |
-| `/auth/callback` | Sincroniza eventos de sesión cliente → servidor. |
-| `/squat-counter/index.html` | Aplicación estática del contador de sentadillas. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key, used by browser and server clients. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key for signed storage URLs or server utilities. |
+| `CHALLENGE_TIMEZONE` *(optional)* | Override default `America/Santiago` for server “today” calculations. |
+| `NUTRITION_BONUS_CUTOFF` *(optional)* | HH:mm cutoff for the +5 nutrition bonus (default `09:00`). |
+| `STREAK_TASKS_REQUIRED` *(optional)* | Minimum completed habits needed per day (default `4`). |
 
-### Contador de sentadillas (public/squat-counter)
+## Supabase Setup
 
-- Usa MediaPipe Pose para detectar ángulo cadera–rodilla–tobillo.
-- Repite una rep cuando el ángulo baja de 125° y después sube por encima de 170°.
-- Muestra estado visual, beep, e intenta sincronizar reps con `/api/squats`.
-- Si no hay sesión activa, informa que las reps quedarán pendientes.
+1. Create a Supabase project and note the URL + keys.
+2. Open **SQL Editor** and run `supabase/schema.sql` from this repo. The script creates:
+   - Tables for companies, members, profiles, challenges, daily logs, nutrition logs, movement first completions, and streaks.
+   - RLS policies that enforce “today only” writes and company scoping.
+   - RPC helpers: `current_local_date`, `claim_first_completion`, `get_*_leaderboard`.
+   - Storage bucket `nutrition_photos` with authenticated write/read policies.
+3. In Supabase Auth > URL configuration add:
+   - Site URL: production domain.
+   - Redirects: `<domain>/auth/callback`, `http://localhost:3000`, `http://localhost:3000/auth/callback`.
 
-## Desarrollo local
+### Creating Companies & Challenges
+
+```sql
+insert into companies (name, slug) values ('Acme Health', 'acme-health');
+
+insert into challenges (
+  company_id, name, level, start_date, end_date,
+  movement_goal, photos_per_day, lessons_per_day,
+  meditation_required, gratitude_required
+)
+values (
+  (select id from companies where slug = 'acme-health'),
+  'Q1 Wellness Sprint',
+  2,
+  '2025-01-06',
+  '2025-04-05',
+  20,
+  1,
+  1,
+  true,
+  true
+);
+```
+
+Users join via `/company/acme-health`, log in or sign up, and the app automatically links them to the active challenge, creates their profile row, and seeds today’s `daily_log`.
+
+## API Overview
+
+| Route | Method | Purpose |
+| --- | --- | --- |
+| `/api/join-company` | `POST` | Link authenticated user to a company slug and active challenge. |
+| `/api/get-daily-log` | `GET` | Returns today’s `daily_log`, challenge caps, company info, and streaks. |
+| `/api/log-movement` | `POST` | Adds reps (capped per challenge) and awards top-3 bonuses via RPC. |
+| `/api/log-nutrition` | `POST` | Multipart upload (camera only) to `nutrition_photos`, with early bonus. |
+| `/api/log-lesson` | `POST` | Adds +3 per lesson up to the challenge-defined daily limit. |
+| `/api/log-meditation` | `POST` | Marks 3-point meditation completion after playback is confirmed. |
+| `/api/log-gratitude` | `POST` | Stores daily gratitude text (+2 pts). |
+| `/api/log-notes` | `PATCH` | Optional daily notes (no points, today only). |
+| `/api/get-leaderboard` | `GET` | Calls Supabase RPC for daily / weekly / monthly rankings. |
+
+All endpoints use the Supabase server client, enforce auth, and rely on the shared timezone helper so that dates never depend on the browser clock.
+
+## App Router Pages
+
+- `/company/[slug]` – company-branded join CTA with login/signup links that carry the slug forward.
+- `/login` / `/signup` – minimal email/password forms; when a `company` query param is present the flow auto-calls `/api/join-company`.
+- `/dashboard` – daily checklist (movement, nutrition, lesson, meditation, gratitude, notes) plus streak tiles and bonus badges.
+- `/profile` – simple profile form (name, body metrics, goals, food preferences).
+- `/ranking` – tabs for today/week/month leaderboards scoped to the user’s company.
+- Legacy marketing pages (`/`, `/servicios`, `/competencia`, etc.) remain untouched.
+
+## Local Development
 
 ```bash
 npm install
 npm run dev
-# abre http://localhost:3000
+# visit http://localhost:3000
 ```
 
-Para usar el contador local, visita: `http://localhost:3000/squat-counter/index.html` (HTTPS no es necesario porque está en localhost).
+Use Supabase’s auth emulator or real project keys; the Supabase provider syncs browser sessions with `/auth/callback`.
 
-## Deploy
+## Deployment
 
-1. Hacer commit y push a `main`.
-2. En Vercel, definir las variables de entorno y hacer redeploy.
-3. Probar rutas `/login`, `/competencia`, `/squat-counter/index.html` en producción (se necesita HTTPS para acceso a cámara).
+1. Deploy the repo on Vercel (Next.js App Router + Edge runtime ready).
+2. Set the environment variables listed above in Vercel.
+3. Run the SQL script on the production Supabase project and confirm the `nutrition_photos` bucket exists.
+4. Point your company partners to `/company/<slug>` links so that every employee joins with the correct scope.
 
-## Próximos pasos sugeridos
+## Daily Ops Checklist
 
-- Afinar el reconocimiento para otras variantes (por ejemplo vuelos laterales u otros ejercicios).
-- Enriquecer el leaderboard con nombres visibles (guardar `display_name` por usuario).
-- Añadir jobs programados en Supabase o Vercel para cerrar semanas y enviar resultados.
+- Monitor `daily_log` and `first_completions` tables for anomalies.
+- Use the SQL RPCs to power email summaries or scheduled reports.
+- Adjust challenge caps (`movement_goal`, `lessons_per_day`, etc.) per company without redeploying the app.
+
+With these pieces in place the corporate wellness challenge is ready for production: one click per habit, unambiguous rules, and auditable Supabase data.

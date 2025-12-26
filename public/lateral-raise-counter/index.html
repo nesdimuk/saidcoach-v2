@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SaidTrainer Lateral Raise Counter</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"
+      defer
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      defer
+    ></script>
+    <script src="./script.js" defer></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>SaidTrainer Lateral Raise Counter</h1>
+        <p>Autoriza la cámara, ponte de perfil y eleva tus brazos para comenzar a contar.</p>
+      </header>
+
+      <section class="counter">
+        <div id="repCount" class="counter__value">0</div>
+        <div id="statusText" class="counter__status">Esperando...</div>
+        <button id="resetButton" class="counter__button">Reiniciar</button>
+      </section>
+
+      <section class="session">
+        <h2 class="session__title">Tu cuenta SaidCoach</h2>
+        <p id="sessionStatus" class="session__status">
+          Inicia sesión en <strong>saidcoach.com</strong> antes de entrenar para guardar tus repeticiones.
+        </p>
+        <div class="session__actions">
+          <a href="/login" class="session__button session__button--primary">Iniciar sesión</a>
+          <button id="refreshSession" class="session__button session__button--secondary">
+            Comprobar sesión
+          </button>
+        </div>
+        <p id="syncStatus" class="session__message"></p>
+      </section>
+
+      <section class="visualizer">
+        <canvas id="outputCanvas" class="visualizer__canvas"></canvas>
+        <video id="inputVideo" class="visualizer__video" playsinline></video>
+      </section>
+    </main>
+  </body>
+</html>

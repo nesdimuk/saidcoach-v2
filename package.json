@@ -9,9 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@mediapipe/pose": "^0.5.1675469404",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.78.0",
+    "luxon": "^3.7.2",
     "next": "15.5.4",
+    "ngrok": "^5.0.0-beta.2",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

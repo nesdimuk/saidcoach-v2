@@ -2,139 +2,130 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSupabaseClient, useSupabaseAuth } from "@/providers/SupabaseProvider";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSupabaseAuth, useSupabaseClient } from "@/providers/SupabaseProvider";
 
 export default function LoginPage() {
   const supabase = useSupabaseClient();
   const { user, loading, signOut } = useSupabaseAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const companySlug = searchParams.get("company") ?? "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleMode = () => {
-    setMode((prev) => (prev === "signin" ? "signup" : "signin"));
-    setMessage(null);
-    setError(null);
+  const handleJoinCompany = async () => {
+    if (!companySlug) return;
+    await fetch("/api/join-company", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companySlug }),
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
-    setMessage(null);
-
     try {
-      if (mode === "signin") {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) {
-          setError(signInError.message);
-        } else {
-          setMessage("¡Bienvenido! Ya puedes cerrar esta pantalla.");
-        }
-      } else {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (signUpError) {
-          setError(signUpError.message);
-        } else {
-          setMessage("Revisa tu bandeja para confirmar la cuenta y luego inicia sesión.");
-        }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message);
+        return;
       }
+      await handleJoinCompany();
+      router.push("/dashboard");
     } catch {
-      setError("Ocurrió un error inesperado. Intenta nuevamente.");
+      setError("No se pudo iniciar sesión.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center bg-brand-black px-4 text-brand-white">
-      <div className="w-full max-w-md rounded-3xl border border-brand-orange/30 bg-brand-black/80 p-8 shadow-2xl">
-        <h1 className="text-3xl font-bold text-brand-orange text-center mb-6">
-          {mode === "signin" ? "Inicia sesión" : "Crea tu cuenta"}
-        </h1>
+    <section className="flex min-h-[70vh] items-center justify-center bg-white px-4 py-16 text-black">
+      <div className="w-full max-w-md space-y-6 rounded-3xl border border-black/10 bg-white p-10 shadow-lg">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-gray-500">Accede al reto</p>
+          <h1 className="text-3xl font-semibold text-black">Inicia sesión</h1>
+        </div>
         {loading ? (
-          <p className="text-center text-sm text-gray-300">Verificando sesión...</p>
+          <p className="text-sm text-gray-500">Verificando sesión...</p>
         ) : user ? (
-          <div className="space-y-6 text-center">
-            <p className="text-lg">
-              Ya iniciaste sesión como{" "}
-              <span className="font-semibold text-brand-orange">{user.email}</span>.
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sesión activa como <span className="font-semibold">{user.email}</span>
             </p>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/competencia"
-                className="rounded-full bg-brand-orange px-6 py-3 font-semibold text-brand-black transition hover:bg-orange-400"
-              >
-                Ir al leaderboard
-              </Link>
-              <button
-                type="button"
-                onClick={signOut}
-                className="rounded-full border border-brand-orange px-6 py-3 font-semibold text-brand-white transition hover:bg-brand-orange/20"
-              >
-                Cerrar sesión
-              </button>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-200">
-              Correo electrónico
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="mt-1 w-full rounded-full border border-brand-orange/40 bg-transparent px-4 py-3 text-base text-brand-white outline-none transition focus:border-brand-orange"
-              />
-            </label>
-            <label className="block text-sm font-semibold text-gray-200">
-              Contraseña
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="mt-1 w-full rounded-full border border-brand-orange/40 bg-transparent px-4 py-3 text-base text-brand-white outline-none transition focus:border-brand-orange"
-              />
-            </label>
-            {error && <p className="rounded-md bg-red-500/20 px-3 py-2 text-sm text-red-300">{error}</p>}
-            {message && (
-              <p className="rounded-md bg-brand-orange/10 px-3 py-2 text-sm text-brand-orange">{message}</p>
-            )}
             <button
-              type="submit"
-              disabled={submitting}
-              className="flex w-full items-center justify-center rounded-full bg-brand-orange px-6 py-3 text-base font-semibold text-brand-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-70"
+              type="button"
+              onClick={async () => {
+                await handleJoinCompany();
+                router.push("/dashboard");
+              }}
+              className="w-full rounded-md bg-black px-4 py-3 font-semibold text-white transition hover:bg-gray-800"
             >
-              {submitting
-                ? "Procesando..."
-                : mode === "signin"
-                ? "Entrar"
-                : "Crear cuenta"}
+              Ir al dashboard
             </button>
             <button
               type="button"
-              onClick={toggleMode}
-              className="w-full rounded-full border border-brand-orange px-6 py-3 text-sm font-semibold text-brand-white transition hover:bg-brand-orange/20"
+              onClick={async () => {
+                await signOut();
+              }}
+              className="w-full rounded-md border border-black px-4 py-3 font-semibold text-black transition hover:bg-gray-50"
             >
-              {mode === "signin"
-                ? "¿No tienes cuenta? Regístrate"
-                : "¿Ya tienes cuenta? Inicia sesión"}
+              Cerrar sesión
             </button>
-          </form>
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <label className="block text-sm font-medium">
+                Correo
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-black focus:outline-none"
+                />
+              </label>
+              <label className="block text-sm font-medium">
+                Contraseña
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-black focus:outline-none"
+                />
+              </label>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-md bg-black px-4 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {submitting ? "Entrando..." : "Entrar"}
+              </button>
+            </form>
+            <p className="text-sm text-gray-600">
+              ¿No tienes cuenta?{" "}
+              <Link
+                href={companySlug ? `/signup?company=${companySlug}` : "/signup"}
+                className="font-semibold underline"
+              >
+                Regístrate
+              </Link>
+            </p>
+          </>
         )}
       </div>
-    </div>
+    </section>
   );
 }
