@@ -50,9 +50,12 @@ export async function POST(request: Request) {
         throw new AppError(500, "No se pudo asignar el bonus.");
       }
 
-      if (position && (position === 1 || position === 2 || position === 3)) {
-        movementBonus = MOVEMENT_TOP_BONUS[position];
-        awardedPosition = position;
+      const validPosition: 1 | 2 | 3 | undefined =
+        position === 1 || position === 2 || position === 3 ? position : undefined;
+
+      if (validPosition !== undefined) {
+        movementBonus = MOVEMENT_TOP_BONUS[validPosition];
+        awardedPosition = validPosition;
       }
     }
 
