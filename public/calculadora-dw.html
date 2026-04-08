@@ -270,10 +270,10 @@ function getClasificacion(sexo, gc, edad) {
   return tabla[tabla.length - 1];
 }
 
-function rangeLabel(r) {
+function rangeLabel(r, forPDF = false) {
   const [mn, mx] = r;
   if (mn === null) return `< ${mx}%`;
-  if (mx === null) return `≥ ${mn}%`;
+  if (mx === null) return forPDF ? `>= ${mn}%` : `≥ ${mn}%`;
   return `${mn}–${mx}%`;
 }
 
@@ -489,7 +489,7 @@ function generarPDF() {
       const isCurrentAge = activa && i === d.agi;
       doc.setFont('helvetica', isCurrentAge ? 'bold' : 'normal');
       doc.setTextColor(isCurrentAge ? 26 : 130, isCurrentAge ? 26 : 130, isCurrentAge ? 24 : 125);
-      doc.text(rangeLabel(r), cx + 2, y);
+      doc.text(rangeLabel(r, true), cx + 2, y);
       cx += colWidths[i + 1];
     });
     y += 7;
