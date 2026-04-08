@@ -121,10 +121,25 @@
 
 <main>
   <div class="card">
+    <div class="card-title">Datos del entrenador</div>
+    <div class="row">
+      <div class="field"><label>Nombre del entrenador</label><input type="text" id="entrenador" placeholder="Tu nombre" /></div>
+      <div class="field">
+        <label>Logo (opcional)</label>
+        <input type="file" id="logo_file" accept="image/*" onchange="cargarLogo(this)" style="font-size:13px; padding:7px 10px;" />
+      </div>
+    </div>
+    <div id="logo-preview" style="display:none; margin-top:8px; align-items:center; gap:10px;">
+      <img id="logo-img" style="height:40px; border-radius:6px; border:0.5px solid var(--border);" />
+      <span style="font-size:12px; color:var(--text-muted);">Logo cargado ✓</span>
+      <button onclick="quitarLogo()" style="font-size:11px; background:none; border:none; color:var(--text-hint); cursor:pointer;">Quitar</button>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">Datos del alumno</div>
     <div class="row">
       <div class="field"><label>Nombre</label><input type="text" id="nombre" placeholder="Juan Pérez" /></div>
-      <div class="field"><label>Entrenador</label><input type="text" id="entrenador" placeholder="Tu nombre" /></div>
     </div>
     <div class="row">
       <div class="field"><label>Edad (años)</label><input type="number" id="edad" min="17" max="72" placeholder="25" /></div>
@@ -267,6 +282,25 @@ function getCoefs(sexo, edad) {
 }
 
 let RES = null;
+let LOGO_B64 = null;
+
+function cargarLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    LOGO_B64 = e.target.result;
+    document.getElementById('logo-img').src = LOGO_B64;
+    document.getElementById('logo-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function quitarLogo() {
+  LOGO_B64 = null;
+  document.getElementById('logo_file').value = '';
+  document.getElementById('logo-preview').style.display = 'none';
+}
 
 function calcular() {
   const nombre = document.getElementById('nombre').value.trim();
@@ -354,6 +388,14 @@ function generarPDF() {
   doc.setTextColor(130, 130, 125);
   doc.text('@assist.trainer', W - mg, 24, { align: 'right' });
   doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
+
+  // Logo del entrenador
+  if (LOGO_B64) {
+    try {
+      const ext = LOGO_B64.includes('image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(LOGO_B64, ext, W - mg - 28, 6, 28, 28);
+    } catch(e) {}
+  }
 
   let y = 54;
 
