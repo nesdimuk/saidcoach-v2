@@ -373,29 +373,29 @@ function generarPDF() {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = 210, mg = 20, cw = W - mg * 2;
 
-  // Header
-  doc.setFillColor(26, 26, 24);
+  // Header blanco
+  doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, 42, 'F');
-  doc.setTextColor(255, 255, 255);
+  doc.setDrawColor(220, 220, 215);
+  doc.line(0, 42, W, 42);
+  doc.setTextColor(26, 26, 24);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(17);
   doc.text('Reporte de Composición Corporal', mg, 16);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(180, 180, 175);
+  doc.setTextColor(100, 100, 96);
   doc.text('Método Durnin & Womersley — 4 pliegues cutáneos', mg, 24);
   doc.text('Densidad → %GC: Ecuación de Siri (1956)', mg, 31);
-  doc.setTextColor(130, 130, 125);
+  doc.setTextColor(160, 160, 155);
   doc.text('@assist.trainer', W - mg, 24, { align: 'right' });
   doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
 
-  // Logo del entrenador con fondo blanco
+  // Logo del entrenador sin fondo (header ya es blanco)
   if (LOGO_B64) {
     try {
       const ext = LOGO_B64.includes('image/png') ? 'PNG' : 'JPEG';
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(W - mg - 30, 5, 32, 30, 3, 3, 'F');
-      doc.addImage(LOGO_B64, ext, W - mg - 29, 6, 30, 28);
+      doc.addImage(LOGO_B64, ext, W - mg - 30, 5, 30, 30);
     } catch(e) {}
   }
 
