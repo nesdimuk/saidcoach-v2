@@ -5,287 +5,112 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Calculadora Composición Corporal — @assist.trainer</title>
 <meta name="description" content="Herramienta gratuita para entrenadores personales. Calcula % grasa corporal con el método Durnin & Womersley y genera un reporte PDF profesional." />
-<meta property="og:title" content="Calculadora D&W — @assist.trainer" />
-<meta property="og:description" content="Herramienta gratuita para entrenadores. Calcula composición corporal y genera reporte PDF." />
-<meta property="og:type" content="website" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #F7F6F2;
-    --surface: #FFFFFF;
-    --surface2: #F0EFE9;
-    --border: rgba(30,30,28,0.12);
-    --border-strong: rgba(30,30,28,0.22);
-    --text: #1A1A18;
-    --text-muted: #6B6B67;
-    --text-hint: #9B9B97;
-    --accent: #1A1A18;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --bg: #F7F6F2; --surface: #FFFFFF; --surface2: #F0EFE9;
+    --border: rgba(30,30,28,0.12); --border-strong: rgba(30,30,28,0.22);
+    --text: #1A1A18; --text-muted: #6B6B67; --text-hint: #9B9B97;
+    --font: 'DM Sans', system-ui, sans-serif; --font-mono: 'DM Mono', monospace;
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
   }
-
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 0;
-  }
-
-  /* HEADER */
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
   header {
-    background: var(--text);
-    color: #fff;
-    padding: 20px 24px 18px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    background: var(--text); color: #fff; padding: 20px 24px 18px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   }
-  .header-left h1 {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    line-height: 1.2;
-    margin-bottom: 3px;
-  }
-  .header-left p {
-    font-size: 12px;
-    color: rgba(255,255,255,0.5);
-    font-family: var(--font-mono);
-  }
+  .header-left h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 3px; }
+  .header-left p { font-size: 12px; color: rgba(255,255,255,0.5); font-family: var(--font-mono); }
   .header-badge {
-    background: rgba(255,255,255,0.1);
-    border: 0.5px solid rgba(255,255,255,0.2);
-    border-radius: var(--radius-sm);
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    white-space: nowrap;
-    text-decoration: none;
-    transition: background 0.15s;
+    background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.85); white-space: nowrap; text-decoration: none;
   }
   .header-badge:hover { background: rgba(255,255,255,0.16); }
-
-  /* MAIN */
-  main {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 24px 16px 80px;
-  }
-
-  /* CARD */
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 80px; }
   .card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-bottom: 12px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px; margin-bottom: 12px;
   }
   .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 14px;
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px;
   }
-
-  /* FORM */
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
   .row:last-child { margin-bottom: 0; }
   .field { display: flex; flex-direction: column; gap: 5px; }
   label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-  input[type="text"],
-  input[type="number"],
-  select {
-    font-family: var(--font);
-    font-size: 15px;
-    color: var(--text);
-    background: var(--surface2);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 9px 12px;
-    width: 100%;
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
+  input[type="text"], input[type="number"], select {
+    font-family: var(--font); font-size: 15px; color: var(--text);
+    background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 12px; width: 100%;
+    outline: none; transition: border-color 0.15s; -webkit-appearance: none;
   }
   input:focus, select:focus { border-color: var(--border-strong); background: #fff; }
   input::placeholder { color: var(--text-hint); }
-
-  /* PLIEGUES */
   .pliegues-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .pliegue-item {
-    background: var(--surface2);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 12px;
+    background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-md); padding: 12px;
   }
-  .pliegue-name {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-  .pliegue-item input {
-    background: var(--surface);
-    font-family: var(--font-mono);
-    font-size: 16px;
-  }
-
-  /* BUTTON */
+  .pliegue-name { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .pliegue-item input { background: var(--surface); font-family: var(--font-mono); font-size: 16px; }
   .btn-calc {
-    width: 100%;
-    padding: 14px;
-    background: var(--text);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-md);
-    font-family: var(--font);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 12px;
-    transition: opacity 0.15s, transform 0.1s;
-    letter-spacing: -0.2px;
+    width: 100%; padding: 14px; background: var(--text); color: #fff; border: none;
+    border-radius: var(--radius-md); font-family: var(--font); font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 12px; transition: opacity 0.15s, transform 0.1s;
   }
   .btn-calc:hover { opacity: 0.88; }
   .btn-calc:active { transform: scale(0.98); }
-
   .btn-pdf {
-    width: 100%;
-    padding: 13px;
-    background: transparent;
-    color: var(--text);
-    border: 0.5px solid var(--border-strong);
-    border-radius: var(--radius-md);
-    font-family: var(--font);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    width: 100%; padding: 13px; background: transparent; color: var(--text);
+    border: 0.5px solid var(--border-strong); border-radius: var(--radius-md);
+    font-family: var(--font); font-size: 14px; font-weight: 500; cursor: pointer;
+    margin-top: 10px; transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   .btn-pdf:hover { background: var(--surface2); }
-
-  /* ERROR */
   .error-msg {
-    font-size: 12px;
-    color: #A32D2D;
-    margin-top: 8px;
-    display: none;
-    padding: 8px 12px;
-    background: #FCEBEB;
-    border-radius: var(--radius-sm);
+    font-size: 12px; color: #A32D2D; margin-top: 8px; display: none;
+    padding: 8px 12px; background: #FCEBEB; border-radius: var(--radius-sm);
   }
-
-  /* RESULTADO */
   .resultado { display: none; }
   .result-main {
-    background: var(--text);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    color: #fff;
-    margin-bottom: 10px;
+    background: var(--text); border-radius: var(--radius-md);
+    padding: 20px; color: #fff; margin-bottom: 10px;
   }
-  .result-label-small {
-    font-size: 11px;
-    color: rgba(255,255,255,0.5);
-    font-family: var(--font-mono);
-    margin-bottom: 4px;
-  }
-  .result-big {
-    font-size: 48px;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: -2px;
-    font-family: var(--font-mono);
-  }
+  .result-label-small { font-size: 11px; color: rgba(255,255,255,0.5); font-family: var(--font-mono); margin-bottom: 4px; }
+  .result-big { font-size: 48px; font-weight: 600; line-height: 1; letter-spacing: -2px; font-family: var(--font-mono); }
   .result-unit { font-size: 22px; font-weight: 400; }
   .result-clas {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+    display: inline-block; margin-top: 10px; padding: 4px 12px;
+    border-radius: 6px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
   }
-  .result-sub {
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    font-family: var(--font-mono);
-    margin-top: 8px;
-  }
-
+  .result-sub { font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--font-mono); margin-top: 8px; }
   .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-  .metric-card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 14px 16px;
-  }
+  .metric-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; }
   .metric-val { font-size: 22px; font-weight: 600; font-family: var(--font-mono); color: var(--text); }
   .metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-
-  /* TABLA REFERENCIA */
-  .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .ref-table tr td { padding: 7px 10px; }
-  .ref-table tr:not(:last-child) td { border-bottom: 0.5px solid var(--border); }
-  .ref-row-active { font-weight: 600; border-radius: var(--radius-sm); }
-  .ref-range { color: var(--text-muted); text-align: right; font-family: var(--font-mono); font-size: 12px; }
-  .ref-arrow { color: var(--text-muted); font-size: 11px; margin-left: 6px; }
-
-  /* FOOTER */
-  footer {
-    text-align: center;
-    padding: 32px 16px 24px;
-    border-top: 0.5px solid var(--border);
-    margin-top: 8px;
-  }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ref-table th { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border-bottom: 0.5px solid var(--border); text-align: left; }
+  .ref-table td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-row-active td { font-weight: 600; }
+  footer { text-align: center; padding: 32px 16px 24px; border-top: 0.5px solid var(--border); }
   footer p { font-size: 12px; color: var(--text-hint); line-height: 1.6; }
   footer a { color: var(--text); font-weight: 600; text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
-  .footer-brand {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  /* DISCLAIMER */
-  .disclaimer {
-    font-size: 11px;
-    color: var(--text-hint);
-    line-height: 1.5;
-    margin-top: 8px;
-  }
-
+  .footer-brand { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .disclaimer { font-size: 11px; color: var(--text-hint); line-height: 1.5; margin-top: 8px; }
   @media (max-width: 400px) {
-    .row { grid-template-columns: 1fr; }
-    .pliegues-grid { grid-template-columns: 1fr; }
-    .metrics-grid { grid-template-columns: 1fr; }
+    .row, .pliegues-grid, .metrics-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
-
 <header>
   <div class="header-left">
     <h1>Composición corporal</h1>
@@ -295,73 +120,37 @@
 </header>
 
 <main>
-
-  <!-- DATOS PERSONALES -->
   <div class="card">
     <div class="card-title">Datos del alumno</div>
     <div class="row">
-      <div class="field">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" placeholder="Juan Pérez" />
-      </div>
-      <div class="field">
-        <label for="entrenador">Entrenador</label>
-        <input type="text" id="entrenador" placeholder="Tu nombre" />
+      <div class="field"><label>Nombre</label><input type="text" id="nombre" placeholder="Juan Pérez" /></div>
+      <div class="field"><label>Entrenador</label><input type="text" id="entrenador" placeholder="Tu nombre" /></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Edad (años)</label><input type="number" id="edad" min="17" max="72" placeholder="25" /></div>
+      <div class="field"><label>Sexo biológico</label>
+        <select id="sexo"><option value="M">Masculino</option><option value="F">Femenino</option></select>
       </div>
     </div>
     <div class="row">
-      <div class="field">
-        <label for="edad">Edad (años)</label>
-        <input type="number" id="edad" min="17" max="72" placeholder="25" />
-      </div>
-      <div class="field">
-        <label for="sexo">Sexo biológico</label>
-        <select id="sexo">
-          <option value="M">Masculino</option>
-          <option value="F">Femenino</option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div class="field">
-        <label for="peso">Peso (kg)</label>
-        <input type="number" id="peso" step="0.1" placeholder="75.0" />
-      </div>
-      <div class="field">
-        <label for="talla">Talla (cm)</label>
-        <input type="number" id="talla" step="0.1" placeholder="175" />
-      </div>
+      <div class="field"><label>Peso (kg)</label><input type="number" id="peso" step="0.1" placeholder="75.0" /></div>
+      <div class="field"><label>Talla (cm)</label><input type="number" id="talla" step="0.1" placeholder="175" /></div>
     </div>
   </div>
 
-  <!-- PLIEGUES -->
   <div class="card">
     <div class="card-title">Pliegues cutáneos (mm)</div>
     <div class="pliegues-grid">
-      <div class="pliegue-item">
-        <div class="pliegue-name">Bíceps</div>
-        <input type="number" id="p_biceps" step="0.1" placeholder="mm" />
-      </div>
-      <div class="pliegue-item">
-        <div class="pliegue-name">Tríceps</div>
-        <input type="number" id="p_triceps" step="0.1" placeholder="mm" />
-      </div>
-      <div class="pliegue-item">
-        <div class="pliegue-name">Subescapular</div>
-        <input type="number" id="p_subescapular" step="0.1" placeholder="mm" />
-      </div>
-      <div class="pliegue-item">
-        <div class="pliegue-name">Suprailíaco</div>
-        <input type="number" id="p_suprailiaco" step="0.1" placeholder="mm" />
-      </div>
+      <div class="pliegue-item"><div class="pliegue-name">Bíceps</div><input type="number" id="p_biceps" step="0.1" placeholder="mm" /></div>
+      <div class="pliegue-item"><div class="pliegue-name">Tríceps</div><input type="number" id="p_triceps" step="0.1" placeholder="mm" /></div>
+      <div class="pliegue-item"><div class="pliegue-name">Subescapular</div><input type="number" id="p_subescapular" step="0.1" placeholder="mm" /></div>
+      <div class="pliegue-item"><div class="pliegue-name">Suprailíaco</div><input type="number" id="p_suprailiaco" step="0.1" placeholder="mm" /></div>
     </div>
     <div id="error-msg" class="error-msg"></div>
     <button class="btn-calc" onclick="calcular()">Calcular composición corporal</button>
   </div>
 
-  <!-- RESULTADO -->
   <div id="resultado" class="resultado">
-
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="result-main">
         <div class="result-label-small">% grasa corporal · Siri</div>
@@ -371,22 +160,10 @@
       </div>
       <div style="padding:16px;">
         <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-val" id="res-mgc">—</div>
-            <div class="metric-lbl">kg de grasa</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val" id="res-mlg">—</div>
-            <div class="metric-lbl">kg masa magra</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val" id="res-suma">—</div>
-            <div class="metric-lbl">mm suma pliegues</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val" id="res-imc">—</div>
-            <div class="metric-lbl">IMC</div>
-          </div>
+          <div class="metric-card"><div class="metric-val" id="res-mgc">—</div><div class="metric-lbl">kg de grasa</div></div>
+          <div class="metric-card"><div class="metric-val" id="res-mlg">—</div><div class="metric-lbl">kg masa magra</div></div>
+          <div class="metric-card"><div class="metric-val" id="res-suma">—</div><div class="metric-lbl">mm suma pliegues</div></div>
+          <div class="metric-card"><div class="metric-val" id="res-imc">—</div><div class="metric-lbl">IMC</div></div>
         </div>
         <button class="btn-pdf" onclick="generarPDF()">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -395,12 +172,22 @@
       </div>
     </div>
 
-    <!-- REFERENCIA -->
     <div class="card">
-      <div class="card-title">Clasificación ACSM</div>
-      <table class="ref-table" id="ref-tabla"></table>
+      <div class="card-title">Clasificación ACSM por edad</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Categoría</th>
+            <th>20–29</th>
+            <th>30–39</th>
+            <th>40–49</th>
+            <th>50+</th>
+          </tr>
+        </thead>
+        <tbody id="ref-tabla"></tbody>
+      </table>
+      <p style="font-size:11px; color:var(--text-hint); margin-top:10px;">Fuente: ACSM Guidelines for Exercise Testing and Prescription</p>
     </div>
-
   </div>
 </main>
 
@@ -413,47 +200,73 @@
 <script>
 const DW_COEFS = {
   M: [
-    { min: 17, max: 19, c: 1.1620, m: 0.0630 },
-    { min: 20, max: 29, c: 1.1631, m: 0.0632 },
-    { min: 30, max: 39, c: 1.1422, m: 0.0544 },
-    { min: 40, max: 49, c: 1.1620, m: 0.0700 },
-    { min: 50, max: 72, c: 1.1715, m: 0.0779 }
+    { min:17, max:19, c:1.1620, m:0.0630 },
+    { min:20, max:29, c:1.1631, m:0.0632 },
+    { min:30, max:39, c:1.1422, m:0.0544 },
+    { min:40, max:49, c:1.1620, m:0.0700 },
+    { min:50, max:72, c:1.1715, m:0.0779 }
   ],
   F: [
-    { min: 17, max: 19, c: 1.1549, m: 0.0678 },
-    { min: 20, max: 29, c: 1.1599, m: 0.0717 },
-    { min: 30, max: 39, c: 1.1423, m: 0.0632 },
-    { min: 40, max: 49, c: 1.1333, m: 0.0612 },
-    { min: 50, max: 72, c: 1.1339, m: 0.0645 }
+    { min:17, max:19, c:1.1549, m:0.0678 },
+    { min:20, max:29, c:1.1599, m:0.0717 },
+    { min:30, max:39, c:1.1423, m:0.0632 },
+    { min:40, max:49, c:1.1333, m:0.0612 },
+    { min:50, max:72, c:1.1339, m:0.0645 }
   ]
 };
 
-const CLASIFICACION = {
+// ACSM classification by sex and age group
+// [20-29, 30-39, 40-49, 50+] ranges: [min, max] (max null = open ended)
+const ACSM = {
+  F: [
+    { label: 'Muy bajo',   color:'#0C447C', bg:'#E6F1FB', ranges: [[null,17],[null,18],[null,20],[null,21]] },
+    { label: 'Bajo',       color:'#085041', bg:'#E1F5EE', ranges: [[17,20],[18,21],[20,23],[21,24]] },
+    { label: 'Promedio',   color:'#633806', bg:'#FAEEDA', ranges: [[21,23],[22,24],[24,27],[24,31]] },
+    { label: 'Elevado',    color:'#7A3010', bg:'#FAECE7', ranges: [[24,27],[25,29],[28,31],[32,35]] },
+    { label: 'Obesidad',   color:'#791F1F', bg:'#FCEBEB', ranges: [[28,null],[30,null],[32,null],[36,null]] }
+  ],
   M: [
-    { max: 6,   label: 'Esencial', rango: '< 6%',   bg: '#E6F1FB', color: '#0C447C' },
-    { max: 13,  label: 'Atlético', rango: '6–13%',  bg: '#E1F5EE', color: '#085041' },
-    { max: 17,  label: 'Fitness',  rango: '14–17%', bg: '#EAF3DE', color: '#27500A' },
-    { max: 24,  label: 'Promedio', rango: '18–24%', bg: '#FAEEDA', color: '#633806' },
-    { max: 999, label: 'Obesidad', rango: '> 25%',  bg: '#FCEBEB', color: '#791F1F' }
-  ],
-  F: [
-    { max: 14,  label: 'Esencial', rango: '< 14%',  bg: '#E6F1FB', color: '#0C447C' },
-    { max: 20,  label: 'Atlético', rango: '14–20%', bg: '#E1F5EE', color: '#085041' },
-    { max: 24,  label: 'Fitness',  rango: '21–24%', bg: '#EAF3DE', color: '#27500A' },
-    { max: 31,  label: 'Promedio', rango: '25–31%', bg: '#FAEEDA', color: '#633806' },
-    { max: 999, label: 'Obesidad', rango: '> 32%',  bg: '#FCEBEB', color: '#791F1F' }
+    { label: 'Muy bajo',   color:'#0C447C', bg:'#E6F1FB', ranges: [[null,9],[null,11],[null,12],[null,13]] },
+    { label: 'Bajo',       color:'#085041', bg:'#E1F5EE', ranges: [[9,12],[11,13],[12,15],[13,16]] },
+    { label: 'Promedio',   color:'#633806', bg:'#FAEEDA', ranges: [[13,16],[14,17],[16,20],[17,21]] },
+    { label: 'Elevado',    color:'#7A3010', bg:'#FAECE7', ranges: [[17,19],[18,22],[21,25],[22,27]] },
+    { label: 'Obesidad',   color:'#791F1F', bg:'#FCEBEB', ranges: [[20,null],[23,null],[26,null],[28,null]] }
   ]
 };
 
-let RES = null;
+const AGE_GROUPS = ['20–29', '30–39', '40–49', '50+'];
+
+function getAgeGroupIndex(edad) {
+  if (edad < 30) return 0;
+  if (edad < 40) return 1;
+  if (edad < 50) return 2;
+  return 3;
+}
+
+function getClasificacion(sexo, gc, edad) {
+  const agi = getAgeGroupIndex(edad);
+  const tabla = ACSM[sexo];
+  for (const cat of tabla) {
+    const [mn, mx] = cat.ranges[agi];
+    if (mn === null && gc < mx) return cat;
+    if (mx === null && gc >= mn) return cat;
+    if (mn !== null && mx !== null && gc >= mn && gc < mx) return cat;
+  }
+  return tabla[tabla.length - 1];
+}
+
+function rangeLabel(r) {
+  const [mn, mx] = r;
+  if (mn === null) return `< ${mx}%`;
+  if (mx === null) return `≥ ${mn}%`;
+  return `${mn}–${mx}%`;
+}
 
 function getCoefs(sexo, edad) {
   return DW_COEFS[sexo].find(r => edad >= r.min && edad <= r.max);
 }
 
-function getClasificacion(sexo, gc) {
-  return CLASIFICACION[sexo].find(r => gc <= r.max) || CLASIFICACION[sexo].at(-1);
-}
+let RES = null;
 
 function calcular() {
   const nombre = document.getElementById('nombre').value.trim();
@@ -485,9 +298,10 @@ function calcular() {
   const mgc = (gc / 100) * peso;
   const mlg = peso - mgc;
   const imc = peso / Math.pow(talla / 100, 2);
-  const clas = getClasificacion(sexo, gc);
+  const clas = getClasificacion(sexo, gc, edad);
+  const agi = getAgeGroupIndex(edad);
 
-  RES = { nombre, entrenador, edad, sexo, peso, talla, bic, tri, sub, sup, suma, densidad, gc, mgc, mlg, imc, clas };
+  RES = { nombre, entrenador, edad, sexo, peso, talla, bic, tri, sub, sup, suma, densidad, gc, mgc, mlg, imc, clas, agi };
 
   document.getElementById('res-gc').textContent = gc.toFixed(1);
   document.getElementById('res-mgc').textContent = mgc.toFixed(1) + ' kg';
@@ -501,17 +315,16 @@ function calcular() {
   badge.style.background = clas.bg;
   badge.style.color = clas.color;
 
-  // Tabla referencia
-  const tabla = CLASIFICACION[sexo];
+  // Render tabla ACSM
+  const tabla = ACSM[sexo];
   const tbody = document.getElementById('ref-tabla');
   tbody.innerHTML = tabla.map(cat => {
     const activa = cat.label === clas.label;
-    const bgRow = activa ? cat.bg : 'transparent';
-    return `<tr style="background:${bgRow};">
-      <td style="border-radius:6px 0 0 6px; color:${activa ? cat.color : '#6B6B67'}; font-weight:${activa ? 600 : 400};">
-        ${cat.label}${activa ? '<span class="ref-arrow">←</span>' : ''}
+    return `<tr class="${activa ? 'ref-row-active' : ''}" style="background:${activa ? cat.bg : 'transparent'};">
+      <td style="color:${activa ? cat.color : 'var(--text-muted)'}; border-radius:6px 0 0 6px;">
+        ${cat.label}${activa ? ' ←' : ''}
       </td>
-      <td class="ref-range" style="border-radius:0 6px 6px 0; color:${activa ? cat.color : '#9B9B97'};">${cat.rango}</td>
+      ${cat.ranges.map((r, i) => `<td style="color:${activa && i===agi ? cat.color : 'var(--text-hint)'}; font-family:var(--font-mono); font-size:11px; ${activa && i===agi ? 'font-weight:600;' : ''}">${rangeLabel(r)}</td>`).join('')}
     </tr>`;
   }).join('');
 
@@ -540,28 +353,22 @@ function generarPDF() {
   doc.text('Densidad → %GC: Ecuación de Siri (1956)', mg, 31);
   doc.setTextColor(130, 130, 125);
   doc.text('@assist.trainer', W - mg, 24, { align: 'right' });
-  doc.text(new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' }), W - mg, 31, { align: 'right' });
+  doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
 
   let y = 54;
 
   function sectionTitle(title) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
     doc.setTextColor(100, 100, 96);
-    doc.text(title.toUpperCase(), mg, y);
-    y += 4;
+    doc.text(title.toUpperCase(), mg, y); y += 4;
     doc.setDrawColor(220, 220, 215);
-    doc.line(mg, y, W - mg, y);
-    y += 7;
+    doc.line(mg, y, W - mg, y); y += 7;
   }
 
-  function dataRow(label, value, bold = false) {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(110, 110, 105);
-    doc.text(label, mg, y);
-    doc.setTextColor(26, 26, 24);
-    doc.text(value, mg + 45, y);
+  function dataRow(label, value) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.setTextColor(110, 110, 105); doc.text(label, mg, y);
+    doc.setTextColor(26, 26, 24); doc.text(value, mg + 45, y);
     y += 6;
   }
 
@@ -572,7 +379,7 @@ function generarPDF() {
   dataRow('Sexo', d.sexo === 'M' ? 'Masculino' : 'Femenino');
   dataRow('Peso', `${d.peso.toFixed(1)} kg`);
   dataRow('Talla', `${d.talla} cm`);
-  dataRow('IMC', d.imc.toFixed(1) + ' kg/m²');
+  dataRow('IMC', `${d.imc.toFixed(1)} kg/m²`);
   y += 4;
 
   sectionTitle('Pliegues cutáneos');
@@ -580,98 +387,83 @@ function generarPDF() {
   dataRow('Tríceps', `${d.tri.toFixed(1)} mm`);
   dataRow('Subescapular', `${d.sub.toFixed(1)} mm`);
   dataRow('Suprailíaco', `${d.sup.toFixed(1)} mm`);
-
-  // Suma con fondo
   doc.setFillColor(240, 239, 233);
   doc.roundedRect(mg - 2, y - 4, cw + 4, 8, 2, 2, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(110, 110, 105);
-  doc.text('Suma total', mg, y);
-  doc.setTextColor(26, 26, 24);
-  doc.text(`${d.suma.toFixed(1)} mm`, mg + 45, y);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.setTextColor(110, 110, 105); doc.text('Suma total', mg, y);
+  doc.setTextColor(26, 26, 24); doc.text(`${d.suma.toFixed(1)} mm`, mg + 45, y);
   y += 12;
 
   // Resultado principal
   doc.setFillColor(26, 26, 24);
   doc.roundedRect(mg, y, cw, 30, 4, 4, 'F');
-  doc.setTextColor(170, 170, 165);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setTextColor(170, 170, 165); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
   doc.text('Porcentaje de grasa corporal (Siri)', mg + 6, y + 8);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(30);
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(30);
   doc.text(`${d.gc.toFixed(1)}%`, mg + 6, y + 22);
-  doc.setFontSize(12);
-  doc.text(d.clas.label.toUpperCase(), mg + 52, y + 22);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(130, 130, 125);
+  doc.setFontSize(12); doc.text(d.clas.label.toUpperCase(), mg + 52, y + 22);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130, 130, 125);
   doc.text(`D = ${d.densidad.toFixed(4)}`, W - mg - 4, y + 22, { align: 'right' });
   y += 38;
 
   // Métricas
   const mw = (cw - 8) / 2;
-  const metricas = [
-    [`${d.mgc.toFixed(1)} kg`, 'Masa grasa'],
-    [`${d.mlg.toFixed(1)} kg`, 'Masa magra'],
-  ];
-  metricas.forEach(([val, lbl], i) => {
+  [[`${d.mgc.toFixed(1)} kg`, 'Masa grasa'], [`${d.mlg.toFixed(1)} kg`, 'Masa magra']].forEach(([val, lbl], i) => {
     const x = mg + i * (mw + 8);
-    doc.setFillColor(245, 244, 240);
-    doc.roundedRect(x, y, mw, 18, 3, 3, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(26, 26, 24);
+    doc.setFillColor(245, 244, 240); doc.roundedRect(x, y, mw, 18, 3, 3, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 26, 24);
     doc.text(val, x + mw / 2, y + 10, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(110, 110, 105);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(110, 110, 105);
     doc.text(lbl, x + mw / 2, y + 15, { align: 'center' });
   });
   y += 26;
 
-  sectionTitle('Clasificación ACSM');
-  const tabla = CLASIFICACION[d.sexo];
-  const colMap = {
-    'Esencial': [230, 241, 251],
-    'Atlético':  [225, 245, 238],
-    'Fitness':  [234, 243, 222],
-    'Promedio': [250, 238, 218],
-    'Obesidad': [252, 235, 235],
-  };
-  doc.setFontSize(10);
-  tabla.forEach(cat => {
+  // Tabla ACSM completa
+  sectionTitle(`Clasificación ACSM — ${d.sexo === 'M' ? 'Masculino' : 'Femenino'}`);
+
+  const colores = { 'Muy bajo':[230,241,251], 'Bajo':[225,245,238], 'Promedio':[250,238,218], 'Elevado':[250,236,231], 'Obesidad':[252,235,235] };
+  const headers = ['Categoría', '20–29', '30–39', '40–49', '50+'];
+  const colWidths = [38, 22, 22, 22, 22];
+  const startX = mg;
+
+  // Header row
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 100, 96);
+  let cx = startX;
+  headers.forEach((h, i) => { doc.text(h, cx + 2, y); cx += colWidths[i]; });
+  y += 4; doc.setDrawColor(200,200,195); doc.line(mg, y, W - mg, y); y += 5;
+
+  ACSM[d.sexo].forEach(cat => {
     const activa = cat.label === d.clas.label;
-    const col = colMap[cat.label] || [245, 244, 240];
-    doc.setFillColor(...col);
-    doc.rect(mg - 2, y - 4, cw + 4, 7.5, 'F');
+    const col = colores[cat.label] || [245,244,240];
+    if (activa) { doc.setFillColor(...col); doc.rect(mg - 2, y - 4, cw + 4, 8, 'F'); }
     doc.setFont('helvetica', activa ? 'bold' : 'normal');
-    doc.setTextColor(activa ? 26 : 100, activa ? 26 : 100, activa ? 24 : 96);
-    doc.text(cat.label + (activa ? '  ←' : ''), mg + 2, y);
-    doc.setTextColor(110, 110, 105);
-    doc.text(cat.rango, W - mg - 4, y, { align: 'right' });
-    y += 7.5;
+    doc.setFontSize(9);
+    cx = startX;
+    doc.setTextColor(activa ? 26 : 100, activa ? 26 : 24, activa ? 24 : 96);
+    doc.text(cat.label + (activa ? ' \u2190' : ''), cx + 2, y); cx += colWidths[0];
+    cat.ranges.forEach((r, i) => {
+      const isCurrentAge = activa && i === d.agi;
+      doc.setFont('helvetica', isCurrentAge ? 'bold' : 'normal');
+      doc.setTextColor(isCurrentAge ? 26 : 130, isCurrentAge ? 26 : 130, isCurrentAge ? 24 : 125);
+      doc.text(rangeLabel(r), cx + 2, y);
+      cx += colWidths[i + 1];
+    });
+    y += 7;
   });
 
-  // Footer
-  y += 10;
-  doc.setDrawColor(210, 210, 205);
-  doc.line(mg, y, W - mg, y);
   y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 145);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(150,150,145);
+  doc.text('Fuente: ACSM Guidelines for Exercise Testing and Prescription', mg, y);
+  y += 8;
+
+  // Footer
+  doc.setDrawColor(210, 210, 205); doc.line(mg, y, W - mg, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150,150,145);
   doc.text('Este reporte es de uso educativo y no reemplaza evaluación médica profesional.', mg, y);
   y += 5;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(26, 26, 24);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(26,26,24);
   doc.text('Herramienta gratuita para entrenadores — @assist.trainer', mg, y);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 145);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150,150,145);
   doc.text('instagram.com/assist.trainer', W - mg, y, { align: 'right' });
 
   doc.save(`reporte-${d.nombre.replace(/\s+/g, '-').toLowerCase()}.pdf`);
