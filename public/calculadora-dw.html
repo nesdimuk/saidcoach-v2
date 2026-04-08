@@ -389,11 +389,13 @@ function generarPDF() {
   doc.text('@assist.trainer', W - mg, 24, { align: 'right' });
   doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
 
-  // Logo del entrenador
+  // Logo del entrenador con fondo blanco
   if (LOGO_B64) {
     try {
       const ext = LOGO_B64.includes('image/png') ? 'PNG' : 'JPEG';
-      doc.addImage(LOGO_B64, ext, W - mg - 28, 6, 28, 28);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(W - mg - 30, 5, 32, 30, 3, 3, 'F');
+      doc.addImage(LOGO_B64, ext, W - mg - 29, 6, 30, 28);
     } catch(e) {}
   }
 
