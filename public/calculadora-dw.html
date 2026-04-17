@@ -127,6 +127,7 @@
       <div class="field">
         <label>Logo (opcional)</label>
         <input type="file" id="logo_file" accept="image/*" onchange="cargarLogo(this)" style="font-size:13px; padding:7px 10px;" />
+        <span style="font-size:11px; color:var(--text-hint);">Recomendado: cuadrado, mín. 200×200px, PNG con fondo transparente o blanco</span>
       </div>
     </div>
     <div id="logo-preview" style="display:none; margin-top:8px; align-items:center; gap:10px;">
@@ -375,26 +376,29 @@ function generarPDF() {
 
   // Header blanco
   doc.setFillColor(255, 255, 255);
-  doc.rect(0, 0, W, 42, 'F');
+  doc.rect(0, 0, W, 46, 'F');
   doc.setDrawColor(220, 220, 215);
-  doc.line(0, 42, W, 42);
+  doc.line(0, 46, W, 46);
+
+  const tieneLogoW = LOGO_B64 ? 100 : cw;
   doc.setTextColor(26, 26, 24);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(17);
-  doc.text('Reporte de Composición Corporal', mg, 16);
+  doc.text('Reporte de Composición Corporal', mg, 14);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(100, 100, 96);
-  doc.text('Método Durnin & Womersley — 4 pliegues cutáneos', mg, 24);
-  doc.text('Densidad → %GC: Ecuación de Siri (1956)', mg, 31);
+  doc.text('Método Durnin & Womersley — 4 pliegues cutáneos', mg, 22);
+  doc.text('Densidad → %GC: Ecuación de Siri (1956)', mg, 29);
   doc.setTextColor(160, 160, 155);
-  doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
+  doc.setFontSize(8);
+  doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), mg, 38);
 
-  // Logo del entrenador sin fondo (header ya es blanco)
+  // Logo del entrenador — esquina superior derecha sin superponerse
   if (LOGO_B64) {
     try {
       const ext = LOGO_B64.includes('image/png') ? 'PNG' : 'JPEG';
-      doc.addImage(LOGO_B64, ext, W - mg - 30, 5, 30, 30);
+      doc.addImage(LOGO_B64, ext, W - mg - 34, 5, 34, 34);
     } catch(e) {}
   }
 
