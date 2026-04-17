@@ -388,7 +388,6 @@ function generarPDF() {
   doc.text('Método Durnin & Womersley — 4 pliegues cutáneos', mg, 24);
   doc.text('Densidad → %GC: Ecuación de Siri (1956)', mg, 31);
   doc.setTextColor(160, 160, 155);
-  doc.text('@assist.trainer', W - mg, 24, { align: 'right' });
   doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), W - mg, 31, { align: 'right' });
 
   // Logo del entrenador sin fondo (header ya es blanco)
