@@ -384,6 +384,10 @@ async function generarPDF() {
   status.textContent = '⏳ Generando PDF...';
   status.style.display = 'block';
 
+  // Safari fix: abrir ventana ANTES del await para que no sea bloqueada
+  const ventana = window.open('', '_blank');
+  if (ventana) ventana.document.write('<p style="font-family:sans-serif;padding:20px;">⏳ Preparando tu reporte PDF...</p>');
+
   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -547,9 +551,14 @@ async function generarPDF() {
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Descargar reporte PDF`;
 
-    window.open(publicUrl, '_blank');
+    if (ventana) {
+      ventana.location.href = publicUrl;
+    } else {
+      window.open(publicUrl, '_blank');
+    }
 
   } catch(err) {
+    if (ventana) ventana.close();
     status.textContent = '❌ Error al generar el PDF. Intenta de nuevo.';
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Descargar reporte PDF`;
