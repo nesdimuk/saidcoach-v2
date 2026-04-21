@@ -183,7 +183,7 @@
         </div>
         <button class="btn-pdf" onclick="generarPDF()">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Descargar reporte PDF
+          Ver / Descargar reporte PDF
         </button>
       </div>
     </div>
@@ -231,8 +231,6 @@ const DW_COEFS = {
   ]
 };
 
-// ACSM classification by sex and age group
-// [20-29, 30-39, 40-49, 50+] ranges: [min, max] (max null = open ended)
 const ACSM = {
   F: [
     { label: 'Muy bajo',   color:'#0C447C', bg:'#E6F1FB', ranges: [[null,17],[null,18],[null,20],[null,21]] },
@@ -350,7 +348,6 @@ function calcular() {
   badge.style.background = clas.bg;
   badge.style.color = clas.color;
 
-  // Render tabla ACSM
   const tabla = ACSM[sexo];
   const tbody = document.getElementById('ref-tabla');
   tbody.innerHTML = tabla.map(cat => {
@@ -374,13 +371,11 @@ function generarPDF() {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = 210, mg = 20, cw = W - mg * 2;
 
-  // Header blanco
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, 46, 'F');
   doc.setDrawColor(220, 220, 215);
   doc.line(0, 46, W, 46);
 
-  const tieneLogoW = LOGO_B64 ? 100 : cw;
   doc.setTextColor(26, 26, 24);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(17);
@@ -394,7 +389,6 @@ function generarPDF() {
   doc.setFontSize(8);
   doc.text(new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }), mg, 38);
 
-  // Logo del entrenador — esquina superior derecha sin superponerse
   if (LOGO_B64) {
     try {
       const ext = LOGO_B64.includes('image/png') ? 'PNG' : 'JPEG';
@@ -441,7 +435,6 @@ function generarPDF() {
   doc.setTextColor(26, 26, 24); doc.text(`${d.suma.toFixed(1)} mm`, mg + 45, y);
   y += 12;
 
-  // Resultado principal
   doc.setFillColor(26, 26, 24);
   doc.roundedRect(mg, y, cw, 30, 4, 4, 'F');
   doc.setTextColor(170, 170, 165); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
@@ -453,7 +446,6 @@ function generarPDF() {
   doc.text(`D = ${d.densidad.toFixed(4)}`, W - mg - 4, y + 22, { align: 'right' });
   y += 38;
 
-  // Métricas
   const mw = (cw - 8) / 2;
   [[`${d.mgc.toFixed(1)} kg`, 'Masa grasa'], [`${d.mlg.toFixed(1)} kg`, 'Masa magra']].forEach(([val, lbl], i) => {
     const x = mg + i * (mw + 8);
@@ -465,7 +457,6 @@ function generarPDF() {
   });
   y += 26;
 
-  // Tabla ACSM completa
   sectionTitle(`Clasificación ACSM — ${d.sexo === 'M' ? 'Masculino' : 'Femenino'}`);
 
   const colores = { 'Muy bajo':[230,241,251], 'Bajo':[225,245,238], 'Promedio':[250,238,218], 'Elevado':[250,236,231], 'Obesidad':[252,235,235] };
@@ -473,7 +464,6 @@ function generarPDF() {
   const colWidths = [38, 22, 22, 22, 22];
   const startX = mg;
 
-  // Header row
   doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 100, 96);
   let cx = startX;
   headers.forEach((h, i) => { doc.text(h, cx + 2, y); cx += colWidths[i]; });
@@ -503,7 +493,6 @@ function generarPDF() {
   doc.text('Fuente: ACSM Guidelines for Exercise Testing and Prescription', mg, y);
   y += 8;
 
-  // Footer
   doc.setDrawColor(210, 210, 205); doc.line(mg, y, W - mg, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150,150,145);
   doc.text('Este reporte es de uso educativo y no reemplaza evaluación médica profesional.', mg, y);
@@ -513,7 +502,28 @@ function generarPDF() {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150,150,145);
   doc.text('instagram.com/assist.trainer', W - mg, y, { align: 'right' });
 
-  doc.save(`reporte-${d.nombre.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  // ✅ FIX MÓVIL: Abrir en nueva pestaña en vez de doc.save()
+  const uri = doc.output('datauristring');
+  const filename = `reporte-${d.nombre.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+  const win = window.open();
+  if (win) {
+    win.document.write(`
+      <html><head><title>${filename}</title></head>
+      <body style="margin:0;">
+        <iframe src="${uri}" style="width:100%;height:100vh;border:none;"></iframe>
+      </body></html>
+    `);
+    win.document.close();
+  } else {
+    // Fallback si el navegador bloquea popups
+    const a = document.createElement('a');
+    a.href = uri;
+    a.target = '_blank';
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 </script>
 </body>
