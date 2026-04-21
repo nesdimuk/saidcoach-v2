@@ -221,6 +221,10 @@
 </footer>
 
 <script>
+const SUPABASE_URL = 'https://supabase.saidcoach.com';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTc5OTUzNTYwMH0.u02Pr1wIRrafygHktojepzK9yq0XGa3t0nSDn-LcUEo';
+const BUCKET = 'reportes-dw';
+
 const DW_COEFS = {
   M: [
     { min:17, max:19, c:1.1620, m:0.0630 },
@@ -516,29 +520,34 @@ async function generarPDF() {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150,150,145);
     doc.text('instagram.com/assist.trainer', W - mg, y, { align: 'right' });
 
-    // Convertir a base64 y enviar a n8n
-    const pdfBase64 = doc.output('datauristring').split(',')[1];
-    const nombreSlug = d.nombre.replace(/\s+/g, '-').toLowerCase();
+    // Subir directo a Supabase Storage desde el browser
+    status.textContent = '⏳ Subiendo PDF...';
 
-    status.textContent = '⏳ Subiendo a servidor...';
+    const pdfBlob = doc.output('blob');
+    const filename = `reporte-${d.nombre.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`;
 
-    const response = await fetch('https://n8n.saidcoach.com/webhook/subir-pdf', {
+    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdf: pdfBase64, nombre: nombreSlug })
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/pdf'
+      },
+      body: pdfBlob
     });
 
-    if (!response.ok) throw new Error('Error del servidor');
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Error subiendo PDF');
+    }
 
-    const data = await response.json();
-    const url = data.url;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${filename}`;
 
     status.style.display = 'none';
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Descargar reporte PDF`;
 
-    // Abrir URL real — funciona en todos los dispositivos
-    window.open(url, '_blank');
+    window.open(publicUrl, '_blank');
 
   } catch(err) {
     status.textContent = '❌ Error al generar el PDF. Intenta de nuevo.';
