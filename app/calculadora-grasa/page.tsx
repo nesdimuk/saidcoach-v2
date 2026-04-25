@@ -30,6 +30,8 @@ function getCategory(pct: number, edad: number, sexo: number) {
   return                          { cat: "Muy alto", color: "#c0392b", bg: "rgba(192,57,43,0.15)" };
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function CalculadoraGrasa() {
   const [sexo, setSexo] = useState(0);
   const [edad, setEdad] = useState("");
@@ -47,6 +49,11 @@ export default function CalculadoraGrasa() {
     gi: number;
   }>(null);
   const [error, setError] = useState(false);
+
+  // Lead capture state
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
+  const [desbloqueado, setDesbloqueado] = useState(false);
 
   function calcular() {
     const e   = parseFloat(edad);
@@ -90,6 +97,43 @@ export default function CalculadoraGrasa() {
       cat: getCategory(promedio, e, sexo),
       gi: getAgeGroup(e),
     });
+
+    // Reset gate when recalculating
+    setDesbloqueado(false);
+    setEmail("");
+    setEmailError(false);
+  }
+
+  async function desbloquear() {
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setEmailError(true);
+      return;
+    }
+    setEmailError(false);
+    setDesbloqueado(true);
+
+    const rangosData = RANGOS[sexo as 0 | 1];
+    const gi = resultado?.gi ?? 0;
+    const r = rangosData[gi];
+
+    await fetch("/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim(),
+        pct: resultado?.promedio.toFixed(1),
+        clasificacion: resultado?.cat.cat,
+        cunbae: resultado?.cunbae.toFixed(1),
+        navy: resultado?.navy.toFixed(1),
+        ymca: resultado?.ymca.toFixed(1),
+        sexo: sexo === 0 ? "Hombre" : "Mujer",
+        grupo_edad: rangosData[gi].edad,
+        rango_bajo: `< ${r.lowMax}%`,
+        rango_normal: `${r.lowMax} – ${r.normalMax - 0.1}%`,
+        rango_alto: `${r.normalMax} – ${r.highMax - 0.1}%`,
+        rango_muyalto: `≥ ${r.highMax}%`,
+      }),
+    });
   }
 
   const inputStyle: React.CSSProperties = {
@@ -109,7 +153,7 @@ export default function CalculadoraGrasa() {
     fontSize: 11,
     fontWeight: 700,
     letterSpacing: "0.08em",
-    textTransform: "uppercase",
+    textTransform: "uppercase" as const,
     color: "rgba(255,255,255,0.45)",
     marginBottom: 5,
     display: "block",
@@ -281,9 +325,9 @@ export default function CalculadoraGrasa() {
         {/* RESULTADO */}
         {resultado && (
           <>
+            {/* HERO — SIEMPRE VISIBLE */}
             <div style={{ ...cardStyle, border: "1px solid rgba(231,156,0,0.3)", marginTop: 10, overflow: "hidden", padding: 0 }}>
-              {/* Hero */}
-              <div style={{ background: "linear-gradient(135deg,#1a1200,#2a1f00)", padding: "2rem 1.5rem", textAlign: "center", borderBottom: "1px solid rgba(231,156,0,0.2)" }}>
+              <div style={{ background: "linear-gradient(135deg,#1a1200,#2a1f00)", padding: "2rem 1.5rem", textAlign: "center" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#e79c00", marginBottom: 10 }}>
                   Resultado — promedio 3 métodos
                 </div>
@@ -306,71 +350,167 @@ export default function CalculadoraGrasa() {
                   {resultado.cat.cat}
                 </div>
               </div>
-
-              {/* Métodos */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
-                {[
-                  { label: "CUN-BAE", val: resultado.cunbae },
-                  { label: "US Navy", val: resultado.navy },
-                  { label: "YMCA",    val: resultado.ymca },
-                ].map(({ label, val }, i) => (
-                  <div key={label} style={{
-                    padding: "1rem 0.5rem",
-                    textAlign: "center",
-                    borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
-                  }}>
-                    <div style={{ fontFamily: "monospace", fontSize: 20, fontWeight: 500, color: "#fff" }}>{val.toFixed(1)}%</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 3, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* TABLA RANGOS */}
-            <div style={{ ...cardStyle, marginTop: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e79c00" }}>
-                  Rangos de referencia
+            {/* GATE DE EMAIL */}
+            {!desbloqueado && (
+              <div style={{
+                ...cardStyle,
+                marginTop: 10,
+                border: "1px solid rgba(231,156,0,0.25)",
+                background: "linear-gradient(135deg, #141414, #1a1200)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 8,
+                    background: "#e79c00",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <span style={{ fontSize: 18 }}>📊</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>¿En qué rango estás?</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Ingresa tu email para ver el detalle completo</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
-                  {sexo === 0 ? "Hombre" : "Mujer"} · % grasa
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                  {[
+                    "Tu rango exacto por edad según NIH/WHO",
+                    "Resultados por método (Navy, CUN-BAE, YMCA)",
+                    "Tabla de referencia completa",
+                  ].map((item) => (
+                    <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+                      <span style={{ color: "#e79c00", fontWeight: 700 }}>✓</span>
+                      {item}
+                    </div>
+                  ))}
                 </div>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && desbloquear()}
+                    placeholder="tucorreo@email.com"
+                    style={{
+                      flex: 1,
+                      minWidth: 180,
+                      height: 44,
+                      padding: "0 14px",
+                      border: emailError ? "1px solid #e05555" : "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 8,
+                      background: "#1e1e1e",
+                      color: "#fff",
+                      fontSize: 14,
+                      outline: "none",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                  <button
+                    onClick={desbloquear}
+                    style={{
+                      padding: "0 18px",
+                      height: 44,
+                      background: "#e79c00",
+                      color: "#000",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Ver detalle →
+                  </button>
+                </div>
+
+                {emailError && (
+                  <p style={{ color: "#e05555", fontSize: 12, marginTop: 8 }}>
+                    Ingresa un email válido para continuar.
+                  </p>
+                )}
+
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 10, lineHeight: 1.5 }}>
+                  Sin spam. Solo tu informe. Puedes darte de baja cuando quieras.
+                </p>
               </div>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: "#1e1e1e" }}>
-                    {["Edad", "Bajo", "Normal", "Alto", "Muy alto"].map((h) => (
-                      <th key={h} style={{ padding: "8px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: h === "Edad" ? "left" : "center", whiteSpace: "nowrap" }}>
-                        {h}
-                      </th>
+            )}
+
+            {/* CONTENIDO DESBLOQUEADO */}
+            {desbloqueado && (
+              <>
+                {/* Métodos individuales */}
+                <div style={{ ...cardStyle, border: "1px solid rgba(231,156,0,0.3)", marginTop: 10, overflow: "hidden", padding: 0 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                    {[
+                      { label: "CUN-BAE", val: resultado.cunbae },
+                      { label: "US Navy", val: resultado.navy },
+                      { label: "YMCA",    val: resultado.ymca },
+                    ].map(({ label, val }, i) => (
+                      <div key={label} style={{
+                        padding: "1rem 0.5rem",
+                        textAlign: "center",
+                        borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                      }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 20, fontWeight: 500, color: "#fff" }}>{val.toFixed(1)}%</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 3, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
+                      </div>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rangos.map((r, i) => {
-                    const isActive = i === resultado.gi;
-                    return (
-                      <tr key={r.edad} style={{ background: isActive ? "rgba(231,156,0,0.08)" : "transparent" }}>
-                        <td style={{ padding: "9px 8px", fontWeight: 600, fontSize: 13, color: isActive ? "#e79c00" : "#fff", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", whiteSpace: "nowrap" }}>{r.edad}</td>
-                        {[
-                          `< ${r.lowMax}`,
-                          `${r.lowMax} – ${r.normalMax - 0.1}`,
-                          `${r.normalMax} – ${r.highMax - 0.1}`,
-                          `≥ ${r.highMax}`,
-                        ].map((val, j) => (
-                          <td key={j} style={{ padding: "9px 8px", fontFamily: "monospace", fontSize: 12, color: isActive ? "rgba(231,156,0,0.8)" : "rgba(255,255,255,0.45)", textAlign: "center", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", whiteSpace: "nowrap" }}>
-                            {val}
-                          </td>
+                  </div>
+                </div>
+
+                {/* Tabla rangos */}
+                <div style={{ ...cardStyle, marginTop: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e79c00" }}>
+                      Rangos de referencia
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
+                      {sexo === 0 ? "Hombre" : "Mujer"} · % grasa
+                    </div>
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: "#1e1e1e" }}>
+                        {["Edad", "Bajo", "Normal", "Alto", "Muy alto"].map((h) => (
+                          <th key={h} style={{ padding: "8px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: h === "Edad" ? "left" : "center", whiteSpace: "nowrap" }}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 10, lineHeight: 1.5 }}>
-                Fuente: NIH/WHO Guidelines for BMI · Gallagher et al., Am. J. Clinical Nutrition, Vol. 72, 2000
-              </div>
-            </div>
+                    </thead>
+                    <tbody>
+                      {rangos.map((r, i) => {
+                        const isActive = i === resultado.gi;
+                        return (
+                          <tr key={r.edad} style={{ background: isActive ? "rgba(231,156,0,0.08)" : "transparent" }}>
+                            <td style={{ padding: "9px 8px", fontWeight: 600, fontSize: 13, color: isActive ? "#e79c00" : "#fff", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", whiteSpace: "nowrap" }}>{r.edad}</td>
+                            {[
+                              `< ${r.lowMax}`,
+                              `${r.lowMax} – ${r.normalMax - 0.1}`,
+                              `${r.normalMax} – ${r.highMax - 0.1}`,
+                              `≥ ${r.highMax}`,
+                            ].map((val, j) => (
+                              <td key={j} style={{ padding: "9px 8px", fontFamily: "monospace", fontSize: 12, color: isActive ? "rgba(231,156,0,0.8)" : "rgba(255,255,255,0.45)", textAlign: "center", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", whiteSpace: "nowrap" }}>
+                                {val}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 10, lineHeight: 1.5 }}>
+                    Fuente: NIH/WHO Guidelines for BMI · Gallagher et al., Am. J. Clinical Nutrition, Vol. 72, 2000
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
