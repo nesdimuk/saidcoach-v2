@@ -159,8 +159,7 @@ export async function POST(req: NextRequest) {
         <tr><td style="text-align:center;padding-top:28px;">
           <p style="font-size:11px;color:rgba(255,255,255,0.2);margin:0;line-height:1.7;">
             Herramienta de estimación. No reemplaza evaluación médica profesional.<br>
-            <strong style="color:rgba(255,255,255,0.35);">saidcoach.com · @saidcoach_cl</strong><br>
-            <a href="{{{unsubscribe}}}" style="color:rgba(255,255,255,0.2);font-size:10px;">Darse de baja</a>
+            <strong style="color:rgba(255,255,255,0.35);">saidcoach.com · @saidcoach_cl</strong>
           </p>
         </td></tr>
 
