@@ -436,8 +436,24 @@ export default function CalculadoraGrasa() {
                 )}
 
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 10, lineHeight: 1.5 }}>
-                  📬 Si no ves el email en 2 minutos, revisa tu carpeta de <strong>spam o correo no deseado</strong> y márcanos como remitente seguro.<br /><br />Sin spam. Solo tu informe. Puedes darte de baja cuando quieras.
+                  📬 <strong style={{color:"rgba(255,255,255,0.5)"}}>¿No llegó el email?</strong> Revisa tu carpeta de spam y márcanos como remitente seguro.
                 </p>
+              </div>
+            )}
+
+            {/* AVISO SPAM POST-DESBLOQUEO */}
+            {desbloqueado && (
+              <div style={{
+                marginTop: 10,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: "rgba(231,156,0,0.08)",
+                border: "1px solid rgba(231,156,0,0.2)",
+                fontSize: 12,
+                color: "rgba(255,255,255,0.5)",
+                lineHeight: 1.5,
+              }}>
+                📬 <strong style={{color:"rgba(231,156,0,0.8)"}}>¿No llegó el email?</strong> Revisa tu carpeta de <strong style={{color:"rgba(255,255,255,0.7)"}}>spam</strong> y márcanos como remitente seguro para recibir futuros contenidos.
               </div>
             )}
 
