@@ -436,7 +436,7 @@ export default function CalculadoraGrasa() {
                 )}
 
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 10, lineHeight: 1.5 }}>
-                  Sin spam. Solo tu informe. Puedes darte de baja cuando quieras.
+                  📬 Si no ves el email en 2 minutos, revisa tu carpeta de <strong>spam o correo no deseado</strong> y márcanos como remitente seguro.<br /><br />Sin spam. Solo tu informe. Puedes darte de baja cuando quieras.
                 </p>
               </div>
             )}
