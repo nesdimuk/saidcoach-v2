@@ -4,6 +4,7 @@ import { Montserrat } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SupabaseProvider } from "@/providers/SupabaseProvider";
+import { Analytics } from "@vercel/analytics/react";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
           <main className="flex-grow">{children}</main>
           <Footer />
         </SupabaseProvider>
+        <Analytics />
       </body>
     </html>
   );
