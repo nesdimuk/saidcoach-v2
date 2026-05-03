@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await fetch("https://api.brevo.com/v3/contacts", {
+    const res = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -25,8 +25,16 @@ export async function POST(req: NextRequest) {
       }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error("Brevo error:", res.status, data);
+      return NextResponse.json({ error: "Brevo rechazó el contacto", detail: data }, { status: 502 });
+    }
+
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Error registrando contacto" }, { status: 500 });
+  } catch (e) {
+    console.error("Error llamando a Brevo:", e);
+    return NextResponse.json({ error: "Error de red" }, { status: 500 });
   }
 }
