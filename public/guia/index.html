@@ -1450,10 +1450,7 @@ function FormScreen({ onSubmit }) {
           </div>
         </div>
 
-        <button type="button" onClick={fillDemo} style={{display:'block',width:'100%',padding:'10px',marginBottom:'10px',background:'transparent',border:'1px dashed #c8860a',color:'#c8860a',borderRadius:'6px',cursor:'pointer',fontSize:'13px',fontFamily:'inherit'}}>
-          ⚡ Rellenar datos demo
-        </button>
-        <button type="submit" className="btn-generate" disabled={loading}>
+<button type="submit" className="btn-generate" disabled={loading}>
           {loading ? 'Calculando tu plan...' : '→ Generar Mi Guía Nutricional'}
         </button>
         <p className="privacy-note">🔒 Tu información está segura. No spam, nunca.</p>
