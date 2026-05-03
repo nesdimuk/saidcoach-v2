@@ -988,21 +988,12 @@ const IMG = {
 /* ─────────────────────────────────────────────
    BREVO
 ───────────────────────────────────────────── */
-const BREVO_KEY    = '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';
-const BREVO_LIST   = 3;
-
 async function registrarEnBrevo(email, nombre) {
   try {
-    const parts = nombre.trim().split(' ');
-    await fetch('https://api.brevo.com/v3/contacts', {
+    await fetch('/api/brevo-guia', {
       method: 'POST',
-      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json', 'accept': 'application/json' },
-      body: JSON.stringify({
-        email,
-        attributes: { FIRSTNAME: parts[0] || '', LASTNAME: parts.slice(1).join(' ') || '' },
-        listIds: [BREVO_LIST],
-        updateEnabled: true
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, nombre })
     });
   } catch(e) { /* silencioso — no bloquea al usuario */ }
 }
