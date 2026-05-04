@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
     }
 
-    const apiKey = process.env.BREVO_API_KEY;
+    const apiKey = process.env.BREVO_GUIA_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API key no configurada" }, { status: 500 });
     }
