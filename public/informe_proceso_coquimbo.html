@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Proceso — Coquimbo Unido</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2ee; color: #1a1a1a; min-height: 100vh; }
+
+/* ── LOGIN ── */
+#login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0d2a5e; }
+.login-card { background: #fff; border-radius: 18px; padding: 2.5rem 2rem; width: 100%; max-width: 340px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); text-align: center; }
+.login-badge { width: 68px; height: 68px; border-radius: 50%; background: #0d2a5e; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.login-badge span { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -1px; }
+.login-card h1 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.login-card .sub { font-size: 12px; color: #888; margin-bottom: 1.8rem; }
+.login-card label { font-size: 11px; color: #888; display: block; text-align: left; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+.login-card input { width: 100%; padding: 11px 13px; border: 1.5px solid #e0e0e0; border-radius: 9px; font-size: 14px; outline: none; }
+.login-card input:focus { border-color: #0d2a5e; }
+.login-btn { width: 100%; margin-top: 1.2rem; padding: 12px; background: #0d2a5e; color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+.login-btn:hover { background: #1a3a6e; }
+.login-error { color: #c0392b; font-size: 12px; margin-top: 8px; display: none; }
+
+/* ── DASHBOARD ── */
+#dashboard { display: none; }
+.topbar { background: #0d2a5e; padding: 14px 20px; position: sticky; top: 0; z-index: 100; }
+.topbar-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.topbar h1 { color: #fff; font-size: 15px; font-weight: 700; }
+.topbar p { color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 2px; }
+.topbar-btn { padding: 6px 13px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; color: rgba(255,255,255,0.7); font-size: 11px; cursor: pointer; }
+.topbar-btn:hover { background: rgba(255,255,255,0.18); }
+
+.body { padding: 20px; max-width: 1000px; margin: 0 auto; }
+
+/* ── BANNER ── */
+.banner { background: linear-gradient(135deg, #0d2a5e 60%, #1a4080); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px; }
+.banner-icon { font-size: 32px; line-height: 1; }
+.banner h2 { color: #fff; font-size: 15px; font-weight: 700; }
+.banner p { color: rgba(255,255,255,0.65); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+
+/* ── SECTION TITLE ── */
+.section-title { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin: 22px 0 10px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: #e0e0da; }
+
+/* ── KPIs ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 4px; }
+.kpi { background: #fff; border-radius: 12px; padding: 14px 16px; border: 1px solid #e4e4de; }
+.kpi-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 800; line-height: 1; color: #1a1a1a; }
+.kpi-sub { font-size: 11px; color: #aaa; margin-top: 5px; }
+.v-danger { color: #c0392b; }
+.v-warn { color: #d68910; }
+.v-ok { color: #1e8449; }
+
+/* ── INSIGHTS ── */
+.insight-list { display: flex; flex-direction: column; gap: 8px; }
+.insight { background: #fff; border-radius: 11px; padding: 13px 15px; border: 1px solid #e4e4de; border-left: 4px solid #0d2a5e; }
+.insight.danger { border-left-color: #c0392b; }
+.insight.warn { border-left-color: #d68910; }
+.insight.ok { border-left-color: #1e8449; }
+.insight-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #0d2a5e; margin-bottom: 4px; }
+.insight.danger .insight-label { color: #c0392b; }
+.insight.warn .insight-label { color: #d68910; }
+.insight.ok .insight-label { color: #1e8449; }
+.insight p { font-size: 13px; line-height: 1.55; color: #333; }
+
+/* ── COMPARE ── */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e4e4de; }
+.compare-cat { font-size: 13px; font-weight: 700; color: #0d2a5e; margin-bottom: 12px; border-bottom: 1px solid #f0f0ea; padding-bottom: 8px; }
+.compare-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f6f6f2; font-size: 12px; color: #555; }
+.compare-row:last-child { border-bottom: none; padding-bottom: 0; }
+.compare-row .val { font-weight: 700; color: #1a1a1a; }
+
+/* ── CHARTS ── */
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+.chart-card { background: #fff; border-radius: 12px; padding: 18px; border: 1px solid #e4e4de; }
+.chart-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.chart-wrap { position: relative; height: 185px; }
+
+/* ── BARS ── */
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.bar-row:last-child { margin-bottom: 0; }
+.bar-label { width: 140px; font-size: 12px; color: #444; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 8px; background: #f0f0ea; border-radius: 4px; }
+.bar-fill { height: 100%; border-radius: 4px; background: #0d2a5e; transition: width 0.5s; }
+.bar-count { font-size: 11px; color: #888; width: 26px; text-align: right; flex-shrink: 0; }
+
+/* ── TABLE ── */
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid #e4e4de; overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th { background: #f8f8f4; padding: 9px 11px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e8e8e2; white-space: nowrap; }
+.data-table td { padding: 9px 11px; border-bottom: 1px solid #f2f2ee; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #fafaf6; }
+.rank-num { color: #bbb; font-size: 11px; font-weight: 700; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.badge-13 { background: #dbeafe; color: #1e3a6e; }
+.badge-14 { background: #d1fae5; color: #14532d; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.tab { padding: 5px 13px; border-radius: 7px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #666; }
+.tab.active { background: #0d2a5e; color: #fff; border-color: #0d2a5e; }
+
+/* ── FOOTER ── */
+.footer { text-align: center; padding: 28px 0 20px; font-size: 11px; color: #bbb; }
+
+@media(max-width: 600px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .bar-label { width: 100px; }
+  .data-table th:nth-child(n+6), .data-table td:nth-child(n+6) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-badge"><span>CU</span></div>
+    <h1>Coquimbo Unido</h1>
+    <p class="sub">Monitoreo de Carga — Informe de Proceso</p>
+    <label>Contraseña</label>
+    <input type="password" id="pwd-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkLogin()">
+    <p class="login-error" id="login-error">Contraseña incorrecta</p>
+    <button class="login-btn" onclick="checkLogin()">Ver informe</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h1>📋 Informe de Proceso — Coquimbo Unido</h1>
+        <p id="topbar-sub">Cargando datos...</p>
+      </div>
+      <button class="topbar-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div id="loading" style="text-align:center;padding:60px;color:#888;font-size:14px;">⏳ Cargando datos históricos...</div>
+    <div id="content" style="display:none">
+
+      <div class="banner" id="banner"></div>
+
+      <div class="section-title">📊 Resumen del período</div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <div class="section-title">💡 Análisis para el cuerpo técnico</div>
+      <div class="insight-list" id="insights"></div>
+
+      <div class="section-title">⚽ Sub-13 vs Sub-14</div>
+      <div class="compare-grid" id="compare-grid"></div>
+
+      <div class="section-title">📈 Tendencias en el tiempo</div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Asistencia por semana (%)</div>
+          <div class="chart-wrap"><canvas id="chart-asist"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">RPE promedio por semana</div>
+          <div class="chart-wrap"><canvas id="chart-rpe"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Wellness Hooper por semana (1–7)</div>
+          <div class="chart-wrap"><canvas id="chart-wellness"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Variables de bienestar — promedio piloto</div>
+          <div class="chart-wrap"><canvas id="chart-vars"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title">🚨 Molestias físicas reportadas</div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Zonas más frecuentes</div>
+          <div id="zona-bars"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Jugadores con más reportes</div>
+          <div id="molestia-jugadores"></div>
+        </div>
+      </div>
+
+      <div class="section-title">🏅 Ranking de jugadores</div>
+      <div class="tabs">
+        <div class="tab active" onclick="showRanking('todos',this)">Todos</div>
+        <div class="tab" onclick="showRanking('sub13',this)">Sub-13</div>
+        <div class="tab" onclick="showRanking('sub14',this)">Sub-14</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Jugador</th>
+              <th>Cat.</th>
+              <th>Sesiones</th>
+              <th>% Proceso completo</th>
+              <th>RPE prom.</th>
+              <th>Carga total</th>
+              <th>Wellness</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        Informe generado automáticamente — Sistema de Monitoreo Coquimbo Unido · Assist Trainer
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SUPABASE_URL = 'https://supabase.saidcoach.com';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE3OTk1MzU2MDB9.zfTwsA1JbNTMIX8u3NdGQIVqSl1XbwZPJKEb9bxK0RM';
+const PASSWORD = 'piratas2026';
+
+let globalJugStats = null;
+let globalData = null;
+
+function checkLogin() {
+  if (document.getElementById('pwd-input').value === PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function logout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('pwd-input').value = '';
+}
+
+async function fetchSupa(table, params) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}&limit=5000`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function loadData() {
+  try {
+    const [checkins, checkouts, jugadores] = await Promise.all([
+      fetchSupa('checkins', 'categoria=neq.Test&select=nombre,categoria,fecha,asistencia,motivo_inasistencia,sueno,energia,dolor_pre,animo,dolor_previo,dolor_zona&order=fecha.asc'),
+      fetchSupa('checkouts', 'categoria=neq.Test&select=nombre,categoria,fecha,rpe,duracion,carga_total,molestia_nueva,molestia_zona&order=fecha.asc'),
+      fetchSupa('jugadores', 'activo=eq.true&categoria=neq.Test&select=id,nombre,categoria')
+    ]);
+    globalData = { checkins, checkouts, jugadores };
+    render(checkins, checkouts, jugadores);
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `<div style="color:#c0392b;padding:20px;">Error: ${e.message}</div>`;
+  }
+}
+
+// Normalize category name — handles "Sub 13", "Sub-13", "Sub13" etc.
+const isSub13 = c => /sub.?13/i.test(c);
+const isSub14 = c => /sub.?14/i.test(c);
+const bool = v => v === true || v === 'true';
+
+function getWeekKey(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay() || 7;
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day + 1);
+  return monday.toISOString().split('T')[0];
+}
+
+function formatDate(s) {
+  if (!s) return '—';
+  const d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function avg(arr) { return arr.length ? arr.reduce((s,v) => s+v, 0) / arr.length : 0; }
+
+function render(checkins, checkouts, jugadores) {
+  // Session days: unique dates with ≥3 checkins (real sessions, not tests)
+  const dateCounts = {};
+  checkins.forEach(c => { dateCounts[c.fecha] = (dateCounts[c.fecha] || 0) + 1; });
+  const sessionDays = Object.keys(dateCounts).filter(d => dateCounts[d] >= 3).sort();
+
+  if (sessionDays.length === 0) {
+    document.getElementById('loading').innerHTML = '<div style="color:#888;padding:40px;text-align:center">No hay datos de sesiones registradas aún.</div>';
+    return;
+  }
+
+  const fechaInicio = sessionDays[0];
+  const fechaFin = sessionDays[sessionDays.length - 1];
+
+  // Separate categories
+  const ci13 = checkins.filter(c => isSub13(c.categoria));
+  const ci14 = checkins.filter(c => isSub14(c.categoria));
+  const co13 = checkouts.filter(c => isSub13(c.categoria));
+  const co14 = checkouts.filter(c => isSub14(c.categoria));
+  const j13 = jugadores.filter(j => isSub13(j.categoria));
+  const j14 = jugadores.filter(j => isSub14(j.categoria));
+
+  const asisten = checkins.filter(c => bool(c.asistencia));
+  const validCo = checkouts.filter(c => c.rpe !== null && c.rpe !== undefined);
+
+  // Wellness
+  const conW = asisten.filter(c => c.sueno && c.energia && c.animo && c.dolor_pre);
+  const avgSueno   = avg(conW.map(c => c.sueno));
+  const avgEnergia = avg(conW.map(c => c.energia));
+  const avgAnimo   = avg(conW.map(c => c.animo));
+  const avgDolor   = avg(conW.map(c => c.dolor_pre));
+  const avgWellness = (avgSueno + avgEnergia + avgAnimo + avgDolor) / 4;
+
+  // RPE & Carga
+  const avgRPE = avg(validCo.map(c => c.rpe));
+
+  // Molestias
+  const molestias = asisten.filter(c => bool(c.dolor_previo));
+  const molByZona = {};
+  const molByJug = {};
+  molestias.forEach(c => {
+    const z = c.dolor_zona || 'No especificada';
+    molByZona[z] = (molByZona[z] || 0) + 1;
+    molByJug[c.nombre] = (molByJug[c.nombre] || 0) + 1;
+  });
+
+  // Asistencia media
+  const pctByCat = (dayCI, plantel) => {
+    if (!plantel) return 0;
+    const days = [...new Set(dayCI.map(c => c.fecha))].filter(d => dayCI.filter(x => x.fecha === d).length >= 2);
+    if (!days.length) return 0;
+    return avg(days.map(d => dayCI.filter(c => c.fecha === d && bool(c.asistencia)).length / plantel * 100));
+  };
+  const asist13 = pctByCat(ci13, j13.length);
+  const asist14 = pctByCat(ci14, j14.length);
+  const asistTotal = (asist13 + asist14) / 2;
+  const pctCheckout = asisten.length ? Math.round(validCo.length / asisten.length * 100) : 0;
+
+  // TOPBAR
+  document.getElementById('topbar-sub').textContent = `${sessionDays.length} sesiones · ${formatDate(fechaInicio)} → ${formatDate(fechaFin)}`;
+
+  // BANNER
+  document.getElementById('banner').innerHTML = `
+    <div class="banner-icon">🏟️</div>
+    <div>
+      <h2>Piloto Coquimbo Unido — Sub-13 y Sub-14</h2>
+      <p>${formatDate(fechaInicio)} → ${formatDate(fechaFin)}&nbsp;&nbsp;·&nbsp;&nbsp;
+        ${sessionDays.length} sesiones registradas&nbsp;&nbsp;·&nbsp;&nbsp;
+        ${j13.length + j14.length} jugadores en plantel
+      </p>
+    </div>`;
+
+  // KPIs
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">📅 Sesiones</div>
+      <div class="kpi-value">${sessionDays.length}</div>
+      <div class="kpi-sub">Días registrados</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">👥 Asistencia media</div>
+      <div class="kpi-value ${asistTotal >= 80 ? 'v-ok' : asistTotal >= 65 ? 'v-warn' : 'v-danger'}">${Math.round(asistTotal)}%</div>
+      <div class="kpi-sub">Del plantel total</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">⚡ RPE promedio</div>
+      <div class="kpi-value ${avgRPE >= 8 ? 'v-danger' : avgRPE >= 6 ? 'v-warn' : ''}">${avgRPE ? avgRPE.toFixed(1) : '—'}</div>
+      <div class="kpi-sub">Escala 0–10</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🧠 Wellness Hooper</div>
+      <div class="kpi-value ${avgWellness >= 5.5 ? 'v-ok' : avgWellness >= 4 ? 'v-warn' : 'v-danger'}">${avgWellness ? avgWellness.toFixed(1) : '—'}</div>
+      <div class="kpi-sub">Escala 1–7</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🚨 Molestias</div>
+      <div class="kpi-value ${molestias.length > 10 ? 'v-danger' : molestias.length > 4 ? 'v-warn' : ''}">${molestias.length}</div>
+      <div class="kpi-sub">Reportadas en el período</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">✅ Proceso completo</div>
+      <div class="kpi-value ${pctCheckout >= 75 ? 'v-ok' : pctCheckout >= 55 ? 'v-warn' : 'v-danger'}">${pctCheckout}%</div>
+      <div class="kpi-sub">Checkin + checkout</div>
+    </div>`;
+
+  // INSIGHTS
+  const varBaja = [
+    { n: 'Sueño', v: avgSueno },
+    { n: 'Energía', v: avgEnergia },
+    { n: 'Ánimo', v: avgAnimo },
+    { n: 'Dolor previo', v: avgDolor }
+  ].sort((a,b) => a.v - b.v)[0];
+
+  const topZona = Object.entries(molByZona).sort((a,b) => b[1]-a[1])[0];
+
+  const insights = [
+    asistTotal >= 80
+      ? { t:'ok', label:'Asistencia', p:`La asistencia media del plantel fue ${Math.round(asistTotal)}% durante el piloto — un nivel alto que refleja buen compromiso del grupo.` }
+      : { t: asistTotal >= 65 ? 'warn' : 'danger', label:'Asistencia', p:`La asistencia media fue ${Math.round(asistTotal)}%. ${asistTotal < 65 ? 'Nivel bajo — revisar causas y comunicación con el plantel.' : 'Existe margen de mejora en la participación.'}` },
+
+    avgRPE >= 7.5
+      ? { t:'warn', label:'Carga de entrenamiento', p:`RPE promedio de ${avgRPE.toFixed(1)}/10 — carga alta sostenida en el período. Verificar que los bloques de recuperación sean suficientes.` }
+      : { t:'ok', label:'Carga de entrenamiento', p:`RPE promedio de ${avgRPE.toFixed(1)}/10 — carga dentro de rangos normales para fútbol formativo. La dosis de entrenamiento parece bien regulada.` },
+
+    avgWellness < 4.5
+      ? { t:'danger', label:'Bienestar (Hooper)', p:`Wellness promedio de ${avgWellness.toFixed(1)}/7 — nivel bajo. La variable más comprometida fue "${varBaja.n}" (${varBaja.v.toFixed(1)}/7). Se recomienda revisar carga y recuperación.` }
+      : avgWellness < 5.5
+      ? { t:'warn', label:'Bienestar (Hooper)', p:`Wellness promedio de ${avgWellness.toFixed(1)}/7 — nivel moderado. La variable más baja es "${varBaja.n}" (${varBaja.v.toFixed(1)}/7). Mantener monitoreo.` }
+      : { t:'ok', label:'Bienestar (Hooper)', p:`Wellness promedio de ${avgWellness.toFixed(1)}/7 — buen nivel de bienestar general durante el piloto.` },
+
+    molestias.length === 0
+      ? { t:'ok', label:'Molestias físicas', p:'No se registraron molestias físicas en el período. Excelente indicador de salud del plantel.' }
+      : { t: molestias.length > 8 ? 'danger' : 'warn', label:'Molestias físicas', p:`Se registraron ${molestias.length} reportes de molestia física. Zona más frecuente: "${topZona ? topZona[0] : '—'}" (${topZona ? topZona[1] : 0} veces). Considerar trabajo preventivo específico.` },
+
+    Math.abs(asist13 - asist14) > 10
+      ? { t:'warn', label:'Diferencia entre categorías', p:`Sub-13 (${Math.round(asist13)}%) y Sub-14 (${Math.round(asist14)}%) muestran una diferencia de asistencia de ${Math.round(Math.abs(asist13-asist14))} puntos. Investigar qué categoría tiene mayores barreras de participación.` }
+      : { t:'ok', label:'Comparativo categorías', p:`Sub-13 (${Math.round(asist13)}%) y Sub-14 (${Math.round(asist14)}%) tienen niveles de asistencia similares — el sistema funciona de manera homogénea en ambas categorías.` },
+
+    pctCheckout < 60
+      ? { t:'warn', label:'Adherencia al check-out', p:`Solo el ${pctCheckout}% del plantel completó el check-out. Reforzar el hábito para obtener datos de carga más completos.` }
+      : { t:'ok', label:'Adherencia al check-out', p:`El ${pctCheckout}% del plantel completó el check-out — buena adherencia al proceso de registro post sesión.` }
+  ];
+
+  document.getElementById('insights').innerHTML = insights.map(i => `
+    <div class="insight ${i.t}">
+      <div class="insight-label">${i.label}</div>
+      <p>${i.p}</p>
+    </div>`).join('');
+
+  // COMPARE
+  const calcCat = (ci, co, plantel) => {
+    const asist = ci.filter(c => bool(c.asistencia));
+    const rpeArr = co.filter(c => c.rpe !== null).map(c => c.rpe);
+    const wArr = asist.filter(c => c.sueno && c.energia && c.animo && c.dolor_pre)
+                      .map(c => (c.sueno + c.energia + c.animo + c.dolor_pre) / 4);
+    const cargaAcum = co.reduce((s,c) => s + (c.carga_total || 0), 0);
+    const mol = asist.filter(c => bool(c.dolor_previo)).length;
+    const pct = pctByCat(ci, plantel);
+    return {
+      asist: Math.round(pct),
+      rpe: rpeArr.length ? avg(rpeArr).toFixed(1) : '—',
+      wellness: wArr.length ? avg(wArr).toFixed(1) : '—',
+      carga: cargaAcum,
+      molestias: mol
+    };
+  };
+  const s13 = calcCat(ci13, co13, j13.length);
+  const s14 = calcCat(ci14, co14, j14.length);
+
+  const compareCard = (label, s, plantel) => `
+    <div class="compare-card">
+      <div class="compare-cat">⚽ ${label} <span style="font-size:11px;color:#999">${plantel} jugadores</span></div>
+      <div class="compare-row"><span>Asistencia media</span><span class="val">${s.asist}%</span></div>
+      <div class="compare-row"><span>RPE promedio</span><span class="val">${s.rpe}/10</span></div>
+      <div class="compare-row"><span>Wellness Hooper</span><span class="val">${s.wellness}/7</span></div>
+      <div class="compare-row"><span>Carga acumulada</span><span class="val">${s.carga.toLocaleString('es-CL')}</span></div>
+      <div class="compare-row"><span>Molestias reportadas</span><span class="val">${s.molestias}</span></div>
+    </div>`;
+  document.getElementById('compare-grid').innerHTML = compareCard('Sub-13', s13, j13.length) + compareCard('Sub-14', s14, j14.length);
+
+  // WEEKLY DATA
+  const weekMap = {};
+  sessionDays.forEach(fecha => {
+    const wk = getWeekKey(fecha);
+    if (!weekMap[wk]) weekMap[wk] = { ci: [], co: [] };
+    weekMap[wk].ci.push(...checkins.filter(c => c.fecha === fecha));
+    weekMap[wk].co.push(...checkouts.filter(c => c.fecha === fecha));
+  });
+  const weeks = Object.keys(weekMap).sort();
+  const weekLabels = weeks.map(w => {
+    const d = new Date(w + 'T12:00:00');
+    return `${d.getDate()}/${d.getMonth()+1}`;
+  });
+
+  const weekAsist13 = weeks.map(w => {
+    const ci = weekMap[w].ci.filter(c => isSub13(c.categoria));
+    const days = [...new Set(ci.map(c => c.fecha))];
+    if (!days.length || !j13.length) return null;
+    return Math.round(avg(days.map(d => ci.filter(c => c.fecha === d && bool(c.asistencia)).length / j13.length * 100)));
+  });
+  const weekAsist14 = weeks.map(w => {
+    const ci = weekMap[w].ci.filter(c => isSub14(c.categoria));
+    const days = [...new Set(ci.map(c => c.fecha))];
+    if (!days.length || !j14.length) return null;
+    return Math.round(avg(days.map(d => ci.filter(c => c.fecha === d && bool(c.asistencia)).length / j14.length * 100)));
+  });
+  const weekRPE = weeks.map(w => {
+    const r = weekMap[w].co.filter(c => c.rpe !== null).map(c => c.rpe);
+    return r.length ? parseFloat(avg(r).toFixed(1)) : null;
+  });
+  const weekWell = weeks.map(w => {
+    const ws = weekMap[w].ci.filter(c => bool(c.asistencia) && c.sueno && c.energia && c.animo && c.dolor_pre)
+                            .map(c => (c.sueno + c.energia + c.animo + c.dolor_pre) / 4);
+    return ws.length ? parseFloat(avg(ws).toFixed(2)) : null;
+  });
+
+  const chartOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 8 } } },
+    scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+  };
+
+  new Chart(document.getElementById('chart-asist'), {
+    type: 'line',
+    data: {
+      labels: weekLabels,
+      datasets: [
+        { label: 'Sub-13', data: weekAsist13, borderColor: '#0d2a5e', backgroundColor: 'rgba(13,42,94,0.07)', tension: 0.35, spanGaps: true, pointRadius: 3 },
+        { label: 'Sub-14', data: weekAsist14, borderColor: '#1e8449', backgroundColor: 'rgba(30,132,73,0.07)', tension: 0.35, spanGaps: true, pointRadius: 3 }
+      ]
+    },
+    options: { ...chartOpts, scales: { x: { ticks: { font: { size: 10 } } }, y: { min: 0, max: 100, ticks: { font: { size: 10 }, callback: v => v + '%' } } } }
+  });
+
+  new Chart(document.getElementById('chart-rpe'), {
+    type: 'line',
+    data: {
+      labels: weekLabels,
+      datasets: [{ label: 'RPE', data: weekRPE, borderColor: '#d68910', backgroundColor: 'rgba(214,137,16,0.07)', tension: 0.35, spanGaps: true, pointRadius: 3 }]
+    },
+    options: { ...chartOpts, scales: { x: { ticks: { font: { size: 10 } } }, y: { min: 0, max: 10, ticks: { font: { size: 10 } } } } }
+  });
+
+  new Chart(document.getElementById('chart-wellness'), {
+    type: 'line',
+    data: {
+      labels: weekLabels,
+      datasets: [{ label: 'Hooper', data: weekWell, borderColor: '#2980b9', backgroundColor: 'rgba(41,128,185,0.07)', tension: 0.35, spanGaps: true, pointRadius: 3 }]
+    },
+    options: { ...chartOpts, scales: { x: { ticks: { font: { size: 10 } } }, y: { min: 1, max: 7, ticks: { font: { size: 10 } } } } }
+  });
+
+  // Bar chart: wellness variables by category
+  const varData = (ci) => {
+    const w = ci.filter(c => bool(c.asistencia) && c.sueno);
+    if (!w.length) return [null, null, null, null];
+    return [
+      parseFloat(avg(w.map(c => c.sueno)).toFixed(1)),
+      parseFloat(avg(w.map(c => c.energia)).toFixed(1)),
+      parseFloat(avg(w.map(c => c.animo)).toFixed(1)),
+      parseFloat(avg(w.map(c => c.dolor_pre)).toFixed(1))
+    ];
+  };
+  new Chart(document.getElementById('chart-vars'), {
+    type: 'bar',
+    data: {
+      labels: ['Sueño', 'Energía', 'Ánimo', 'Dolor pre'],
+      datasets: [
+        { label: 'Sub-13', data: varData(ci13), backgroundColor: 'rgba(13,42,94,0.75)' },
+        { label: 'Sub-14', data: varData(ci14), backgroundColor: 'rgba(30,132,73,0.75)' }
+      ]
+    },
+    options: { ...chartOpts, scales: { x: { ticks: { font: { size: 10 } } }, y: { min: 0, max: 7, ticks: { font: { size: 10 } } } } }
+  });
+
+  // ZONAS BARS
+  const sortedZonas = Object.entries(molByZona).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxZ = sortedZonas.length ? sortedZonas[0][1] : 1;
+  document.getElementById('zona-bars').innerHTML = sortedZonas.length
+    ? sortedZonas.map(([z, n]) => `
+        <div class="bar-row">
+          <div class="bar-label">${z}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxZ*100)}%"></div></div>
+          <div class="bar-count">${n}</div>
+        </div>`).join('')
+    : '<div style="color:#bbb;font-size:12px;padding-top:10px">Sin molestias registradas</div>';
+
+  const sortedMolJug = Object.entries(molByJug).sort((a,b) => b[1]-a[1]).slice(0,7);
+  const maxM = sortedMolJug.length ? sortedMolJug[0][1] : 1;
+  document.getElementById('molestia-jugadores').innerHTML = sortedMolJug.length
+    ? sortedMolJug.map(([nombre, n], i) => `
+        <div class="bar-row">
+          <div class="bar-label">${nombre}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxM*100)}%;background:${i===0?'#c0392b':'#0d2a5e'}"></div></div>
+          <div class="bar-count">${n}</div>
+        </div>`).join('')
+    : '<div style="color:#bbb;font-size:12px;padding-top:10px">Sin reportes</div>';
+
+  // JUGADORES STATS
+  const jugStats = {};
+  jugadores.forEach(j => {
+    jugStats[j.nombre] = { nombre: j.nombre, categoria: j.categoria, sesiones: 0, completas: 0, rpes: [], cargas: [], wells: [] };
+  });
+  sessionDays.forEach(fecha => {
+    const dayCi = checkins.filter(c => c.fecha === fecha && bool(c.asistencia));
+    const dayCo = checkouts.filter(c => c.fecha === fecha);
+    dayCi.forEach(c => {
+      if (!jugStats[c.nombre]) jugStats[c.nombre] = { nombre: c.nombre, categoria: c.categoria, sesiones: 0, completas: 0, rpes: [], cargas: [], wells: [] };
+      jugStats[c.nombre].sesiones++;
+      const co2 = dayCo.find(x => x.nombre === c.nombre);
+      if (co2) {
+        jugStats[c.nombre].completas++;
+        if (co2.rpe !== null) jugStats[c.nombre].rpes.push(co2.rpe);
+        if (co2.carga_total) jugStats[c.nombre].cargas.push(co2.carga_total);
+      }
+      if (c.sueno && c.energia && c.animo && c.dolor_pre)
+        jugStats[c.nombre].wells.push((c.sueno + c.energia + c.animo + c.dolor_pre) / 4);
+    });
+  });
+
+  globalJugStats = jugStats;
+  renderRanking('todos');
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+function renderRanking(filtro) {
+  let rows = Object.values(globalJugStats).filter(j => j.sesiones > 0);
+  if (filtro === 'sub13') rows = rows.filter(j => isSub13(j.categoria));
+  if (filtro === 'sub14') rows = rows.filter(j => isSub14(j.categoria));
+  rows.sort((a,b) => {
+    const pA = a.sesiones ? a.completas / a.sesiones : 0;
+    const pB = b.sesiones ? b.completas / b.sesiones : 0;
+    return pB - pA || b.sesiones - a.sesiones;
+  });
+
+  document.getElementById('ranking-body').innerHTML = rows.length
+    ? rows.map((j, i) => {
+        const pct = j.sesiones ? Math.round(j.completas / j.sesiones * 100) : 0;
+        const avgR = j.rpes.length ? avg(j.rpes).toFixed(1) : '—';
+        const carga = j.cargas.reduce((s,v) => s+v, 0);
+        const well = j.wells.length ? avg(j.wells).toFixed(1) : '—';
+        const catBadge = isSub13(j.categoria) ? 'badge-13' : 'badge-14';
+        const pctColor = pct >= 80 ? '#1e8449' : pct >= 55 ? '#d68910' : '#c0392b';
+        return `<tr>
+          <td class="rank-num">${i+1}</td>
+          <td><strong>${j.nombre}</strong></td>
+          <td><span class="badge ${catBadge}">${j.categoria}</span></td>
+          <td>${j.sesiones}</td>
+          <td style="color:${pctColor};font-weight:700">${pct}%</td>
+          <td>${avgR}</td>
+          <td>${carga > 0 ? carga.toLocaleString('es-CL') : '—'}</td>
+          <td>${well}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="8" style="text-align:center;color:#bbb;padding:20px">Sin datos</td></tr>';
+}
+
+function showRanking(filtro, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking(filtro);
+}
+</script>
+</body>
+</html>
