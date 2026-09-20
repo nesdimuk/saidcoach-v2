@@ -1488,6 +1488,66 @@
         padding: 6px 5px;
       }
     }
+
+    /* ─── PDF CAPTURE: fuerza layout desktop aunque se genere desde el celular ── */
+    .pdf-capturing .page {
+      width: 210mm !important;
+      min-height: 279mm !important;
+    }
+
+    .pdf-capturing .page-inner {
+      height: 279mm !important;
+      padding: 48px 52px !important;
+    }
+
+    .pdf-capturing .page-inner.auto-height {
+      height: auto !important;
+      min-height: 279mm !important;
+    }
+
+    .pdf-capturing .page-cover {
+      height: 279mm !important;
+      min-height: 0 !important;
+    }
+
+    .pdf-capturing .page-header {
+      flex-wrap: nowrap !important;
+    }
+
+    .pdf-capturing .page-header-left {
+      min-width: auto !important;
+    }
+
+    .pdf-capturing .page-header-right {
+      text-align: right !important;
+    }
+
+    .pdf-capturing .datos-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .pdf-capturing .porciones-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .pdf-capturing .hand-img-lg {
+      width: 72px !important;
+      height: 72px !important;
+    }
+
+    .pdf-capturing table {
+      display: table !important;
+      overflow: visible !important;
+    }
+
+    .pdf-capturing .tracking-table {
+      font-size: 11px !important;
+    }
+
+    .pdf-capturing .tracking-table th,
+    .pdf-capturing .tracking-table td {
+      padding: 8px !important;
+    }
   </style>
 </head>
 
@@ -1773,14 +1833,17 @@
 
       const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-      const fillDemo = () => setForm({
-        nombre: 'Gabriel Said', email: 'demo@saidcoach.com', edad: '32', sexo: 'hombre',
-        peso: '82', altura: '178',
-        objetivo: 'lose_weight', peso_objetivo: '75', fecha_objetivo: '2026-09-01',
-        actividad: 'moderate', ejercicio: 'moderate',
-        dieta: 'anything', comidas: '4',
-        ratio: 'standard', pct_prot: '30', pct_carb: '40', pct_gras: '30',
-      });
+      const fillDemo = () => {
+        const fechaFutura = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0];
+        setForm({
+          nombre: 'Gabriel Said', email: 'demo@saidcoach.com', edad: '32', sexo: 'hombre',
+          peso: '82', altura: '178',
+          objetivo: 'lose_weight', peso_objetivo: '75', fecha_objetivo: fechaFutura,
+          actividad: 'moderate', ejercicio: 'moderate',
+          dieta: 'anything', comidas: '4',
+          ratio: 'standard', pct_prot: '30', pct_carb: '40', pct_gras: '30',
+        });
+      };
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -2030,37 +2093,19 @@
     ───────────────────────────────────────────── */
     async function generarPDF(nombre) {
       const { jsPDF } = window.jspdf;
-      const pages = document.querySelectorAll('.page');
 
-      // Forzar ancho fijo igual en todos los divs antes de capturar
-      const PW_PX = pages[0].offsetWidth;
+      // Forzar layout de escritorio para la captura, aunque se genere desde el celular
+      document.body.classList.add('pdf-capturing');
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Capturar primera página para inicializar el PDF con sus dimensiones reales
-      const primerCanvas = await html2canvas(pages[0], {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: PW_PX,
-        windowWidth: PW_PX,
-      });
+      try {
+        const pages = document.querySelectorAll('.page');
 
-      // Ancho PDF fijo en 216mm (Carta). Altura proporcional al canvas real.
-      const PDF_W = 216;
-      const primerAltura = (primerCanvas.height / primerCanvas.width) * PDF_W;
+        // Forzar ancho fijo igual en todos los divs antes de capturar
+        const PW_PX = pages[0].offsetWidth;
 
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: [PDF_W, primerAltura],
-      });
-
-      pdf.addImage(primerCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PDF_W, primerAltura);
-
-      // Resto de páginas
-      for (let i = 1; i < pages.length; i++) {
-        const canvas = await html2canvas(pages[i], {
+        // Capturar primera página para inicializar el PDF con sus dimensiones reales
+        const primerCanvas = await html2canvas(pages[0], {
           scale: 2,
           useCORS: true,
           allowTaint: true,
@@ -2070,14 +2115,41 @@
           windowWidth: PW_PX,
         });
 
-        // Cada página tiene su propia altura proporcional — sin estirar ni aplanar
-        const alturaReal = (canvas.height / canvas.width) * PDF_W;
-        pdf.addPage([PDF_W, alturaReal], 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PDF_W, alturaReal);
-      }
+        // Ancho PDF fijo en 216mm (Carta). Altura proporcional al canvas real.
+        const PDF_W = 216;
+        const primerAltura = (primerCanvas.height / primerCanvas.width) * PDF_W;
 
-      const filename = `Guia-Nutricional-${nombre.trim().replace(/\s+/g, '-')}.pdf`;
-      pdf.save(filename);
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: [PDF_W, primerAltura],
+        });
+
+        pdf.addImage(primerCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PDF_W, primerAltura);
+
+        // Resto de páginas
+        for (let i = 1; i < pages.length; i++) {
+          const canvas = await html2canvas(pages[i], {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: PW_PX,
+            windowWidth: PW_PX,
+          });
+
+          // Cada página tiene su propia altura proporcional — sin estirar ni aplanar
+          const alturaReal = (canvas.height / canvas.width) * PDF_W;
+          pdf.addPage([PDF_W, alturaReal], 'portrait');
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, PDF_W, alturaReal);
+        }
+
+        const filename = `Guia-Nutricional-${nombre.trim().replace(/\s+/g, '-')}.pdf`;
+        pdf.save(filename);
+      } finally {
+        document.body.classList.remove('pdf-capturing');
+      }
     }
 
     function GuideScreen({ form, resultados, onBack }) {
