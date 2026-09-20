@@ -221,8 +221,6 @@
 </footer>
 
 <script>
-const SUPABASE_URL = 'https://supabase.saidcoach.com';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTc5OTUzNTYwMH0.u02Pr1wIRrafygHktojepzK9yq0XGa3t0nSDn-LcUEo';
 const BUCKET = 'reportes-dw';
 
 const DW_COEFS = {
@@ -530,22 +528,21 @@ async function generarPDF() {
     const pdfBlob = doc.output('blob');
     const filename = `reporte-${d.nombre.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`;
 
-    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`, {
+    const uploadForm = new FormData();
+    uploadForm.append('file', pdfBlob, filename);
+    uploadForm.append('filename', filename);
+
+    const response = await fetch('/api/calculadora-dw-upload', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'apikey': SUPABASE_KEY,
-        'Content-Type': 'application/pdf'
-      },
-      body: pdfBlob
+      body: uploadForm
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.message || 'Error subiendo PDF');
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'Error subiendo PDF');
     }
 
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${filename}`;
+    const publicUrl = result.publicUrl;
 
     status.style.display = 'none';
     btn.disabled = false;

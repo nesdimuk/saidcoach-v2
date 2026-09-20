@@ -1753,15 +1753,12 @@
         await registrarEnBrevo(form.email, form.nombre);
         const resultados = calcular(form);
 
-        // Guardar en Supabase
+        // Guardar en Supabase (vía endpoint server-side, sin exponer keys)
         try {
-          await fetch('https://supabase.saidcoach.com/rest/v1/sc_pn_users', {
+          await fetch('/api/guia-supabase', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTc5OTUzNTYwMH0.u02Pr1wIRrafygHktojepzK9yq0XGa3t0nSDn-LcUEo',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTc5OTUzNTYwMH0.u02Pr1wIRrafygHktojepzK9yq0XGa3t0nSDn-LcUEo',
-              'Prefer': 'resolution=merge-duplicates'
             },
             body: JSON.stringify({
               phone: form.email,
