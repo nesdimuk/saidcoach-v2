@@ -1426,6 +1426,7 @@
 
       .page-inner {
         height: auto;
+        padding: 28px 20px;
       }
 
       .page-cover {
@@ -1433,8 +1434,30 @@
         min-height: 100vw;
       }
 
+      .page-header {
+        flex-wrap: wrap;
+        row-gap: 8px;
+      }
+
+      .page-header-left {
+        min-width: 0;
+      }
+
+      .page-header-right {
+        text-align: left;
+      }
+
+      .datos-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
       .porciones-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-columns: 1fr !important;
+      }
+
+      .hand-img-lg {
+        width: 48px;
+        height: 48px;
       }
 
       .macro-cards {
@@ -1447,6 +1470,22 @@
 
       .metodo-grid {
         grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tracking-table {
+        font-size: 10px;
+      }
+
+      .tracking-table th,
+      .tracking-table td {
+        padding: 6px 5px;
       }
     }
   </style>
@@ -1798,6 +1837,20 @@
             <h1>Tu Guía Nutricional<br />Personalizada</h1>
             <p>Completa tus datos y obtén tu plan de alimentación con porciones de mano, basado en el método Precision Nutrition.</p>
           </div>
+
+          {/* TEMP: botón de datos de prueba — quitar antes de producción final */}
+          <button
+            type="button"
+            onClick={fillDemo}
+            style={{
+              display: 'block', margin: '0 auto 16px', padding: '8px 16px',
+              background: 'transparent', border: '1px dashed var(--gold)',
+              color: 'var(--gold)', borderRadius: '6px', fontSize: '12px',
+              cursor: 'pointer',
+            }}
+          >
+            🧪 Rellenar datos de prueba
+          </button>
 
           <form className="form-card" onSubmit={handleSubmit}>
 
