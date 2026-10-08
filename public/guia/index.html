@@ -1653,6 +1653,12 @@
       }
 
       // 5. Límites de seguridad
+      // Ritmo sostenible: el déficit no puede pasar del 25% del TDEE
+      let limitado = false;
+      if (cals < tdee * 0.75) {
+        cals = tdee * 0.75;
+        limitado = true;
+      }
       const minimo = f.sexo === 'hombre' ? 1500 : 1200;
       cals = Math.max(cals, minimo);
       cals = Math.min(cals, tdee + 500);
@@ -1718,7 +1724,7 @@
 
       return {
         peso_kg, altura_cm, peso_lbs,
-        bmr: Math.round(bmr), tdee: Math.round(tdee), cals,
+        bmr: Math.round(bmr), tdee: Math.round(tdee), cals, limitado,
         gramos_proteina, gramos_carbos, gramos_grasa,
         cals_prot, pct_prot, pct_carbs, pct_grasa,
         palmas, manos_carbos, pulgares, punos_verdura,
@@ -2303,6 +2309,11 @@
                 <div className="plan-hero">
                   <div className="plan-hero-calories">{r.cals.toLocaleString()}</div>
                   <div className="plan-hero-label">calorías estimadas por día</div>
+                  {r.limitado && (
+                    <div className="plan-hero-label" style={{ marginTop: 6, fontSize: 10 }}>
+                      Ajustamos tu plan a un ritmo sostenible: tu meta y fecha pedían un déficit demasiado grande.
+                    </div>
+                  )}
                   <div className="macro-bars">
                     <div className="macro-bar-row">
                       <span className="macro-bar-name">Proteína</span>
@@ -2478,7 +2489,7 @@
                   </div>
                 </div>
 
-                <PageFooter nombre={form.nombre} pag={9} />
+                <PageFooter nombre={form.nombre} pag={7} />
               </div>
             </div>
 
@@ -2521,7 +2532,7 @@
                   </p>
                 </div>
 
-                <PageFooter nombre={form.nombre} pag={10} />
+                <PageFooter nombre={form.nombre} pag={8} />
               </div>
             </div>
 
@@ -2621,49 +2632,7 @@
               </div>
             </div>
 
-            {/* ── PÁGINA 11: REFLEXIÓN FINAL ────────────── */}
-            <div className="page">
-              <div className="page-inner">
-                <div className="page-header">
-                  <div className="page-header-left">
-                    <span>Cierre</span>
-                    <h2>Un Último Mensaje para Ti</h2>
-                  </div>
-                  <div className="page-header-right">Said Coach<br />saidcoach.com</div>
-                </div>
-
-                <div className="reflexion-box">
-                  <h3>{nb}: terminaste de leer esta guía.</h3>
-                  <p>
-                    Y eso ya dice mucho de ti. Este no es el final. Es el punto de partida. Has invertido tiempo en entender tu cuerpo, tus hábitos y tus opciones. Y eso tiene un valor inmenso.
-                  </p>
-                  <p>
-                    No te presiones por hacerlo todo perfecto desde el primer día. Empieza con lo que puedas, donde estés, con lo que tengas. Lo importante no es la perfección, sino la <strong style={{ color: 'var(--gold)' }}>dirección</strong>.
-                  </p>
-                  <p>
-                    Un cuerpo sano no se construye solo con comida y ejercicio — también con descanso, relaciones sanas, y una conversación interna compasiva. La salud no es solo lo que comes. También es lo que piensas, lo que dices de ti, y cómo te cuidas cuando nadie te ve.
-                  </p>
-                  <p>
-                    Imagina tu día ideal. Visualiza que ya estás ahí. ¿Cómo respiras? ¿Qué eliges comer? ¿Qué hábitos mantienes con alegría y no por obligación? Comienza hoy a ser esa persona. Incluso si es con una sola decisión pequeña.
-                  </p>
-                  <div className="reflexion-cita">
-                    "Todo cuenta. Incluso lo pequeño. Especialmente lo pequeño."
-                  </div>
-                </div>
-
-                <div className="contacto-box">
-                  <div className="contacto-info">
-                    Si algo no funciona, lo ajustamos juntos.<br />
-                    <strong>📞 +56 9 9599 5678</strong> &nbsp;·&nbsp; <strong>🌐 www.saidcoach.com</strong>
-                  </div>
-                  <div className="contacto-brand">Said Coach</div>
-                </div>
-
-                <PageFooter nombre={form.nombre} pag={11} />
-              </div>
-            </div>
-
-            {/* ── PÁGINA 12: PLANILLA ──────────────────── */}
+            {/* ── PÁGINA 11: PLANILLA ──────────────────── */}
             <div className="page">
               <div className="page-inner">
                 <div className="page-header">
@@ -2703,6 +2672,48 @@
 
                 <div className="tracking-tip">
                   💡 <strong>Cómo usarla:</strong> Puedes tachar cada círculo al comer la porción, anotar el número de comida en que la consumiste, o escribir la inicial del alimento. Encuentra el método que más se adapte a ti.
+                </div>
+
+                <PageFooter nombre={form.nombre} pag={11} />
+              </div>
+            </div>
+
+            {/* ── PÁGINA 12: CIERRE ────────────── */}
+            <div className="page">
+              <div className="page-inner">
+                <div className="page-header">
+                  <div className="page-header-left">
+                    <span>Cierre</span>
+                    <h2>Un Último Mensaje para Ti</h2>
+                  </div>
+                  <div className="page-header-right">Said Coach<br />saidcoach.com</div>
+                </div>
+
+                <div className="reflexion-box">
+                  <h3>{nb}: terminaste de leer esta guía.</h3>
+                  <p>
+                    Y eso ya dice mucho de ti. Este no es el final. Es el punto de partida. Has invertido tiempo en entender tu cuerpo, tus hábitos y tus opciones. Y eso tiene un valor inmenso.
+                  </p>
+                  <p>
+                    No te presiones por hacerlo todo perfecto desde el primer día. Empieza con lo que puedas, donde estés, con lo que tengas. Lo importante no es la perfección, sino la <strong style={{ color: 'var(--gold)' }}>dirección</strong>.
+                  </p>
+                  <p>
+                    Un cuerpo sano no se construye solo con comida y ejercicio — también con descanso, relaciones sanas, y una conversación interna compasiva. La salud no es solo lo que comes. También es lo que piensas, lo que dices de ti, y cómo te cuidas cuando nadie te ve.
+                  </p>
+                  <p>
+                    Imagina tu día ideal. Visualiza que ya estás ahí. ¿Cómo respiras? ¿Qué eliges comer? ¿Qué hábitos mantienes con alegría y no por obligación? Comienza hoy a ser esa persona. Incluso si es con una sola decisión pequeña.
+                  </p>
+                  <div className="reflexion-cita">
+                    "Todo cuenta. Incluso lo pequeño. Especialmente lo pequeño."
+                  </div>
+                </div>
+
+                <div className="contacto-box">
+                  <div className="contacto-info">
+                    Si algo no funciona, lo ajustamos juntos.<br />
+                    <strong>📞 +56 9 9599 5678</strong> &nbsp;·&nbsp; <strong>🌐 www.saidcoach.com</strong>
+                  </div>
+                  <div className="contacto-brand">Said Coach</div>
                 </div>
 
                 <PageFooter nombre={form.nombre} pag={12} />
