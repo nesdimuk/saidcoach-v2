@@ -1710,9 +1710,13 @@
 
       // 9. Porciones de mano
       const es_hombre = f.sexo === 'hombre';
-      const palmas = Math.round(gramos_proteina / (es_hombre ? 24 : 22));
-      const manos_carbos = Math.round(gramos_carbos / (es_hombre ? 25 : 22));
-      const pulgares = Math.round(gramos_grasa / (es_hombre ? 9 : 8));
+      // Gramos por porción (dentro de los rangos de la guía: palma 20–30 g, puñado 20–30 g, pulgar 7–12 g)
+      const g_palma = es_hombre ? 24 : 22;
+      const g_punado = es_hombre ? 25 : 22;
+      const g_pulgar = 10;
+      const palmas = Math.round(gramos_proteina / g_palma);
+      const manos_carbos = Math.round(gramos_carbos / g_punado);
+      const pulgares = Math.round(gramos_grasa / g_pulgar);
       const punos_verdura = Math.max(4, Math.round(palmas * 0.5));
 
       // 10. Por comida
@@ -1728,6 +1732,7 @@
         gramos_proteina, gramos_carbos, gramos_grasa,
         cals_prot, pct_prot, pct_carbs, pct_grasa,
         palmas, manos_carbos, pulgares, punos_verdura,
+        g_palma, g_punado, g_pulgar,
         comidas,
         palmas_comida, carbos_comida, grasas_comida, verduras_comida,
       };
@@ -2353,6 +2358,9 @@
                     </div>
                   ))}
                 </div>
+                <div style={{ marginTop: 10, fontSize: 10, color: '#777', textAlign: 'center' }}>
+                  Equivalencias para tu plan: 1 palma ≈ {r.g_palma} g de proteína · 1 puñado ≈ {r.g_punado} g de carbohidrato · 1 pulgar ≈ {r.g_pulgar} g de grasa
+                </div>
 
                 <PageFooter nombre={form.nombre} pag={4} />
               </div>
@@ -2431,7 +2439,7 @@
                   </thead>
                   <tbody>
                     {[
-                      ['✋ Palma', 'Proteína', '≈ 20–30 g', '1 pechuga pequeña · 2 huevos · 1 taza yogur griego'],
+                      ['✋ Palma', 'Proteína', '≈ 20–30 g', '1 pechuga pequeña · 3 huevos · 1 taza yogur griego'],
                       ['🤌 Puñado', 'Carbohidrato', '≈ 20–30 g', '½ taza arroz cocido · 1 fruta mediana · ½ papa'],
                       ['👍 Pulgar', 'Grasa', '≈ 7–12 g', '1 cda. aceite · ½ palta · 10 almendras · 4 nueces'],
                       ['👊 Puño', 'Verdura', '50–150 g según vegetal', '1 taza espinaca · ½ taza brócoli cocido'],
@@ -2554,7 +2562,7 @@
                 {[
                   {
                     icon: '🥚', title: 'Huevos', items: [
-                      '2 huevos enteros medianos ≈ 1 palma de proteína',
+                      '3 huevos enteros medianos ≈ 1 palma de proteína',
                       'Solo la clara → cuenta como proteína magra',
                       'Solo la yema → ≈ ½ pulgar de grasa',
                     ]
@@ -2562,15 +2570,15 @@
                   {
                     icon: '🫘', title: 'Legumbres (porotos, lentejas, garbanzos)', items: [
                       'Aportan proteína y carbohidratos a la vez',
-                      '1 taza cocida ≈ ½ palma de proteína + ½ puñado de carbohidratos',
+                      '1 taza cocida ≈ ¾ palma de proteína + 1½ puñados de carbohidratos',
                       'En dieta plant-based se priorizan como proteína principal',
                     ]
                   },
                   {
                     icon: '🥑', title: 'Grasas y aceites — equivalencias de 1 pulgar', items: [
-                      '1 cucharada de aceite (oliva, canola, coco)',
+                      '2 cucharaditas de aceite (oliva, canola, coco)',
                       '½ palta mediana',
-                      '10–12 almendras o 4 nueces enteras (8 mitades)',
+                      '12–15 almendras o 2 nueces enteras (4 mitades)',
                       '12–15 aceitunas grandes',
                       '👉 Usa ½ pulgar cuando uses la mitad de la porción',
                     ]
