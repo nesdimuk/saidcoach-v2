@@ -1587,7 +1587,7 @@
     const FACTOR_ACTIVIDAD = { very_light: 1.20, light: 1.375, moderate: 1.55, heavy: 1.725 };
     const FACTOR_EJERCICIO = { very_light: 0.00, light: 0.05, moderate: 0.10, intense: 0.15, very_intense: 0.20 };
     const RATIOS_DIETA = {
-      anything: { grasa: 0.43, carbos: 0.57 },
+      anything: { grasa: 0.50, carbos: 0.50 },
       mediterranean: { grasa: 0.43, carbos: 0.57 },
       paleo: { grasa: 0.64, carbos: 0.36 },
       vegetarian: { grasa: 0.43, carbos: 0.57 },
@@ -1694,6 +1694,18 @@
         gramos_proteina = Math.round((cals * (parseInt(f.pct_prot) / 100)) / 4);
         gramos_carbos = Math.round((cals * (parseInt(f.pct_carb) / 100)) / 4);
         gramos_grasa = Math.round((cals * (parseInt(f.pct_gras) / 100)) / 9);
+      } else if (f.ratio === 'low_fat' || f.ratio === 'low_carb') {
+        // Como Precision Nutrition: 20% de las calorías totales en el macro bajo, el resto en el otro
+        const cals_rest = Math.max(0, cals - gramos_proteina * 4);
+        if (f.ratio === 'low_fat') {
+          const cals_grasa = cals * 0.20;
+          gramos_grasa = Math.round(cals_grasa / 9);
+          gramos_carbos = Math.round(Math.max(0, cals_rest - cals_grasa) / 4);
+        } else {
+          const cals_carbos = cals * 0.20;
+          gramos_carbos = Math.round(cals_carbos / 4);
+          gramos_grasa = Math.round(Math.max(0, cals_rest - cals_carbos) / 9);
+        }
       } else {
         const cals_prot = gramos_proteina * 4;
         const cals_rest = cals - cals_prot;
@@ -2039,7 +2051,15 @@
                 <div className="radio-group" style={{ marginTop: 4, marginBottom: 12 }}>
                   <label className={`radio-option ${form.ratio === 'standard' ? 'active' : ''}`}>
                     <input type="radio" value="standard" checked={form.ratio === 'standard'} onChange={() => set('ratio', 'standard')} />
-                    Automático (según dieta)
+                    Balanceado (según dieta)
+                  </label>
+                  <label className={`radio-option ${form.ratio === 'low_fat' ? 'active' : ''}`}>
+                    <input type="radio" value="low_fat" checked={form.ratio === 'low_fat'} onChange={() => set('ratio', 'low_fat')} />
+                    Bajo en grasa
+                  </label>
+                  <label className={`radio-option ${form.ratio === 'low_carb' ? 'active' : ''}`}>
+                    <input type="radio" value="low_carb" checked={form.ratio === 'low_carb'} onChange={() => set('ratio', 'low_carb')} />
+                    Bajo en carbos
                   </label>
                   <label className={`radio-option ${form.ratio === 'custom' ? 'active' : ''}`}>
                     <input type="radio" value="custom" checked={form.ratio === 'custom'} onChange={() => set('ratio', 'custom')} />
