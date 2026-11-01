@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { SupabaseProvider } from "@/providers/SupabaseProvider";
+import HideOnRir from "@/components/HideOnRir";
+import { SupabaseUnlessRir } from "@/providers/SupabaseUnlessRir";
 import { Analytics } from "@vercel/analytics/react";
 
 const montserrat = Montserrat({
@@ -26,11 +27,11 @@ export default function RootLayout({
       <body
         className={`${montserrat.className} bg-brand-black text-brand-white flex flex-col min-h-screen`}
       >
-        <SupabaseProvider>
-          <Navbar />
+        <SupabaseUnlessRir>
+          <HideOnRir><Navbar /></HideOnRir>
           <main className="flex-grow">{children}</main>
-          <Footer />
-        </SupabaseProvider>
+          <HideOnRir><Footer /></HideOnRir>
+        </SupabaseUnlessRir>
         <Analytics />
       </body>
     </html>
