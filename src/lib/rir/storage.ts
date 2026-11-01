@@ -97,3 +97,9 @@ export const getExcluded = async (exerciseId: string) =>
   (await getMeta<number[]>(`excluded:${exerciseId}`)) ?? [];
 export const setExcluded = (exerciseId: string, loads: number[]) =>
   setMeta(`excluded:${exerciseId}`, loads);
+
+/** Cargas extra que el alumno agregó porque su equipo tiene más peso que el prescrito. */
+export const getExtraLoads = async (exerciseId: string) =>
+  (await getMeta<number[]>(`extra:${exerciseId}`)) ?? [];
+export const setExtraLoads = (exerciseId: string, loads: number[]) =>
+  setMeta(`extra:${exerciseId}`, loads);

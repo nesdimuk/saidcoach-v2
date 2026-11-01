@@ -19,10 +19,13 @@ import { decodePayload } from "@/lib/rir/prescription-url";
 import {
   getBias,
   getExcluded,
+  getExtraLoads,
   lastValidLoad,
   saveSession,
   setExcluded as persistExcluded,
+  setExtraLoads,
 } from "@/lib/rir/storage";
+import AddLoad from "./AddLoad";
 import DemoSetup from "./DemoSetup";
 import RestTimer from "./RestTimer";
 import SetForm from "./SetForm";
@@ -31,6 +34,11 @@ import { Big, DECISION_STYLE, Screen, fmtKg } from "./ui";
 
 type Phase = "loading" | "error" | "setup" | "pickLoad" | "intro" | "set" | "result" | "summary";
 
+const buildLoads = (p: Prescription, excluded: number[], extra: number[]) =>
+  [...new Set([...expandScheme(p.scheme, excluded), ...extra.filter((x) => !excluded.includes(x))])].sort(
+    (a, b) => a - b,
+  );
+
 const DEFAULT_STUDENT: StudentProfile = { id: "anon", name: "Alumno", level: "intermedio" };
 
 export default function RirApp() {
@@ -38,9 +46,11 @@ export default function RirApp() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
   const [prescription, setPrescription] = useState<Prescription | null>(null);
+  const [trainerPhone, setTrainerPhone] = useState<string | undefined>();
   const [student, setStudent] = useState<StudentProfile>(DEFAULT_STUDENT);
   const [loads, setLoads] = useState<number[]>([]);
   const [excluded, setExcluded] = useState<number[]>([]);
+  const [extra, setExtra] = useState<number[]>([]);
   const [bias, setBias] = useState(0);
   const [load, setLoad] = useState(0);
   const [reducedBy, setReducedBy] = useState(0);
@@ -51,10 +61,12 @@ export default function RirApp() {
   const saved = useRef(false);
   const booted = useRef(false);
 
-  const begin = useCallback(async (p: Prescription, s: StudentProfile = DEFAULT_STUDENT) => {
+  const begin = useCallback(async (p: Prescription, s: StudentProfile = DEFAULT_STUDENT, phone?: string) => {
+    setTrainerPhone(phone);
     try {
       const ex = await getExcluded(p.exerciseId);
-      const l = expandScheme(p.scheme, ex);
+      const xt = await getExtraLoads(p.exerciseId);
+      const l = buildLoads(p, ex, xt);
       const b = (await getBias(s.id)) ?? initialBias(s);
       const last = await lastValidLoad(p.exerciseId, s.id);
       const days = last ? Math.floor((Date.now() - new Date(last.date).getTime()) / 86_400_000) : null;
@@ -62,6 +74,7 @@ export default function RirApp() {
       setPrescription(p);
       setStudent(s);
       setExcluded(ex);
+      setExtra(xt);
       setLoads(l);
       setBias(b);
       setSets([]);
@@ -91,7 +104,7 @@ export default function RirApp() {
       setError(r.error);
       return setPhase("error");
     }
-    void begin(r.value.prescription, r.value.student ?? DEFAULT_STUDENT);
+    void begin(r.value.prescription, r.value.student ?? DEFAULT_STUDENT, r.value.trainerPhone);
   }, [params, begin]);
 
   // Guardar al llegar al resumen
@@ -111,6 +124,20 @@ export default function RirApp() {
     });
   }, [phase, prescription, student, sets, decision]);
 
+  /** Agrega un peso mayor al máximo conocido; limita el salto por seguridad. */
+  const addHeavier = (kg: number): string | null => {
+    if (!prescription) return null;
+    const top = loads[loads.length - 1];
+    if (kg <= top) return `Tiene que ser mayor que ${fmtKg(top)}.`;
+    const limit = Math.round(top * 1.3 * 100) / 100;
+    if (kg > limit) return `Sube de a poco: máximo ${fmtKg(limit)} por ahora.`;
+    const xt = [...extra, kg];
+    setExtra(xt);
+    setLoads(buildLoads(prescription, excluded, xt));
+    void setExtraLoads(prescription.exerciseId, xt);
+    return null;
+  };
+
   if (phase === "loading") return <p className="p-6 text-center text-brand-white/70">Cargando…</p>;
 
   if (phase === "error")
@@ -122,7 +149,7 @@ export default function RirApp() {
       </Screen>
     );
 
-  if (phase === "setup") return <DemoSetup onStart={(p) => void begin(p)} />;
+  if (phase === "setup") return <DemoSetup onStart={(p, phone) => void begin(p, DEFAULT_STUDENT, phone)} />;
 
   const p = prescription!;
   const setIndex = sets.length + 1;
@@ -148,6 +175,18 @@ export default function RirApp() {
             </Big>
           ))}
         </div>
+        <AddLoad
+          label="Mi peso no está en la lista"
+          onAdd={(kg) => {
+            const err = addHeavier(kg);
+            if (!err) {
+              setLoad(kg);
+              setReducedBy(0);
+              setPhase("intro");
+            }
+            return err;
+          }}
+        />
       </Screen>
     );
 
@@ -201,6 +240,18 @@ export default function RirApp() {
         setIndex={setIndex}
         load={load}
         ladderText={ladder ? decision?.ladderText : undefined}
+        onAddHeavier={
+          load >= loads[loads.length - 1]
+            ? (kg) => {
+                const err = addHeavier(kg);
+                if (!err) {
+                  setLadder(null);
+                  setLoad(kg);
+                }
+                return err;
+              }
+            : undefined
+        }
         onSubmit={(entry) => {
           const next = [...sets, entry];
           const d = decideNext({ prescription: p, loads, bias, sets: next, ladder });
@@ -213,7 +264,7 @@ export default function RirApp() {
         onLoadMissing={() => {
           const ex = [...excluded, load];
           try {
-            const l = expandScheme(p.scheme, ex);
+            const l = buildLoads(p, ex, extra);
             setExcluded(ex);
             setLoads(l);
             setLoad(roundDown(l, load));
@@ -267,6 +318,25 @@ export default function RirApp() {
             ⚠️ Avísale a tu entrenador: {decision.alertCoach}.
           </p>
         )}
+        {decision.ladder?.kind === "up" && decision.action === "continuar" && (
+          <AddLoad
+            onAdd={(kg) => {
+              const err = addHeavier(kg);
+              if (err) return err;
+              setLadder(null);
+              setDecision({
+                ...decision,
+                color: "subir",
+                ladder: null,
+                ladderText: undefined,
+                nextLoad: kg,
+                message: `Sube a ${fmtKg(kg)}.`,
+              });
+              if (!finished) setLoad(kg);
+              return null;
+            }}
+          />
+        )}
         {!finished && <RestTimer endsAt={restEndsAt} onExtend={(ms) => setRestEndsAt((t) => t + ms)} />}
       </Screen>
     );
@@ -275,6 +345,8 @@ export default function RirApp() {
   return (
     <Summary
       name={p.exerciseName}
+      studentName={student.name}
+      trainerPhone={trainerPhone}
       sets={sets}
       validFlags={sets.map(isValidSet)}
       nextLoad={decision?.nextLoad ?? null}

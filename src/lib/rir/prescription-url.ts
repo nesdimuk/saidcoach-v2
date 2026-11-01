@@ -1,8 +1,11 @@
+import { cleanPhone } from "./report";
 import type { ExerciseType, LoadScheme, Prescription, StudentProfile } from "./engine";
 
 export interface RirPayload {
   prescription: Prescription;
   student?: StudentProfile;
+  /** WhatsApp del entrenador (solo dígitos, formato internacional). */
+  trainerPhone?: string;
 }
 
 const TYPES: ExerciseType[] = ["compuesto_libre", "maquina", "aislado"];
@@ -42,7 +45,8 @@ export function decodePayload(param: string): DecodeResult {
       initialBias: typeof json.student.initialBias === "number" ? json.student.initialBias : undefined,
     };
   }
-  return { ok: true, value: { prescription, student } };
+  const trainerPhone = typeof json.trainerPhone === "string" ? cleanPhone(json.trainerPhone) ?? undefined : undefined;
+  return { ok: true, value: { prescription, student, trainerPhone } };
 }
 
 // JSON externo: se valida campo por campo abajo

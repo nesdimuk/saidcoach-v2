@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Prescription, RirReported, SetEntry } from "@/lib/rir/engine";
+import AddLoad from "./AddLoad";
 import HelpRir from "./HelpRir";
 import { Big, Screen, fmtKg } from "./ui";
 
@@ -14,6 +15,7 @@ export default function SetForm({
   ladderText,
   onSubmit,
   onLoadMissing,
+  onAddHeavier,
 }: {
   prescription: Prescription;
   setIndex: number;
@@ -21,6 +23,8 @@ export default function SetForm({
   ladderText?: string;
   onSubmit: (e: SetEntry) => void;
   onLoadMissing: () => void;
+  /** Solo si la carga actual es la máxima conocida. */
+  onAddHeavier?: (kg: number) => string | null;
 }) {
   const [step, setStep] = useState<Step>("reps");
   const [reps, setReps] = useState(p.repMin);
@@ -53,6 +57,7 @@ export default function SetForm({
             <Big variant="ghost" onClick={onLoadMissing}>
               Mi equipo no tiene este peso
             </Big>
+            {onAddHeavier && <AddLoad onAdd={onAddHeavier} />}
           </>
         }
       >

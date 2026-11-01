@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import type { ExerciseType, LoadScheme, Prescription } from "@/lib/rir/engine";
+import { cleanPhone } from "@/lib/rir/report";
 import { encodePayload } from "@/lib/rir/prescription-url";
 import { Big, Screen } from "./ui";
 
 const field =
   "min-h-12 w-full rounded-lg border border-white/20 bg-white/10 px-3 text-lg text-brand-white";
 
-export default function DemoSetup({ onStart }: { onStart: (p: Prescription) => void }) {
+export default function DemoSetup({ onStart }: { onStart: (p: Prescription, trainerPhone?: string) => void }) {
   const [name, setName] = useState("Sentadilla goblet");
   const [type, setType] = useState<ExerciseType>("compuesto_libre");
   const [rir, setRir] = useState(2);
@@ -21,6 +22,7 @@ export default function DemoSetup({ onStart }: { onStart: (p: Prescription) => v
   const [max, setMax] = useState(24);
   const [step, setStep] = useState(2);
   const [lista, setLista] = useState("5, 7.5, 10, 12.5, 15");
+  const [phone, setPhone] = useState("");
   const [copied, setCopied] = useState(false);
 
   const build = (): Prescription => {
@@ -52,7 +54,7 @@ export default function DemoSetup({ onStart }: { onStart: (p: Prescription) => v
     set(parseFloat(e.target.value.replace(",", ".")) || 0);
 
   const copyLink = async () => {
-    const url = `${location.origin}/rir?p=${encodePayload({ prescription: build() })}`;
+    const url = `${location.origin}/rir?p=${encodePayload({ prescription: build(), trainerPhone: cleanPhone(phone) ?? undefined })}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -66,7 +68,7 @@ export default function DemoSetup({ onStart }: { onStart: (p: Prescription) => v
     <Screen
       footer={
         <>
-          <Big variant="primary" onClick={() => onStart(build())}>
+          <Big variant="primary" onClick={() => onStart(build(), cleanPhone(phone) ?? undefined)}>
             Empezar
           </Big>
           <Big onClick={copyLink}>{copied ? "¡Link copiado!" : "Copiar link para el alumno"}</Big>
@@ -113,6 +115,17 @@ export default function DemoSetup({ onStart }: { onStart: (p: Prescription) => v
           <input className={field} type="number" inputMode="numeric" value={rest} onChange={num(setRest)} />
         </label>
       </div>
+      <label className="block space-y-1">
+        <span>WhatsApp del entrenador (opcional)</span>
+        <input
+          className={field}
+          type="tel"
+          inputMode="tel"
+          placeholder="+56 9 1234 5678"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+      </label>
       <fieldset className="space-y-3">
         <legend className="mb-1">Pesos disponibles (kg)</legend>
         <div className="grid grid-cols-2 gap-3">
