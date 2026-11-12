@@ -56,7 +56,8 @@
     <div class="card"><h2>¿QUIÉN ENTRENA?</h2><div class="row who" id="who"></div></div>
     <div class="card">
       <h2>CÁMARA</h2>
-      <select id="cams"></select><br><br>
+      <select id="cams"></select>
+      <button id="flip" style="width:100%;margin-top:10px">🔄 Cambiar a cámara trasera</button><br><br>
       <button id="start">▶ Empezar</button>
       <label id="upWrap" style="display:none;margin-top:10px"><span style="display:block;text-align:center;background:#3a86ff;border-radius:16px;padding:14px;font-weight:700;font-size:18px;cursor:pointer">📁 Subir captura de pasos</span>
         <input id="upFile" type="file" accept="image/*" style="display:none"></label>
@@ -83,8 +84,10 @@ const $ = id => document.getElementById(id);
 const video=$("video"), canvas=$("canvas"), ctx=canvas.getContext("2d");
 let ex="squat", who=null, reps=0, stage="up", smooth=null, running=false, landmarker, draw;
 let detector=null, cups=[], lastDet=0, cupSeenAt=-1e9, sipSince=null, sipDone=false, lastCond=0;
+let facing="user", camChosen=false;
+const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let ready=false, stillSince=null, topHip=null, downAt=0, maxHip=0;
-function resetGate(){ ready=false; stillSince=null; topHip=null; maxHip=0; stage="up"; smooth=null; }
+function resetGate(){ if(typeof waterReset==="function") waterReset(); ready=false; stillSince=null; topHip=null; maxHip=0; stage="up"; smooth=null; }
 const today = new Date().toISOString().slice(0,10);
 let scores = load();
 
@@ -115,7 +118,7 @@ function angle(a,b,c){
 async function listCams(){
   const devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput");
   $("cams").innerHTML = devs.map((d,i)=>`<option value="${d.deviceId}">${d.label||"Cámara "+(i+1)}</option>`).join("");
-  if(devs.length>1) $("cams").selectedIndex = devs.length-1; // suele ser la USB
+  if(!camChosen && !isMobile && devs.length>1) $("cams").selectedIndex = devs.length-1; // en PC suele ser la USB
 }
 
 async function init(){
@@ -130,15 +133,35 @@ async function init(){
   catch(e){ try{ detector = await ObjectDetector.createFromOptions(files, dopts("CPU")); }catch(e2){ console.warn("Sin detector de vasos", e2); } }
 }
 
+async function openCam(){
+  if(video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
+  const id = (camChosen || !isMobile) ? $("cams").value : "";
+  const v = id ? {deviceId:{exact:id}} : {facingMode:facing};
+  video.srcObject = await navigator.mediaDevices.getUserMedia({video:{...v, width:{ideal:1280}, height:{ideal:720}}});
+  await video.play();
+  const fm = video.srcObject.getVideoTracks()[0].getSettings().facingMode;
+  if(fm) facing = fm==="environment" ? "environment" : "user";
+  const mirror = facing==="user" ? "scaleX(-1)" : "none";      // espejo solo con la frontal
+  video.style.transform = canvas.style.transform = mirror;
+  $("flip").textContent = facing==="user" ? "🔄 Cambiar a cámara trasera" : "🔄 Cambiar a cámara frontal";
+  const cur = video.srcObject.getVideoTracks()[0].getSettings().deviceId;
+  await listCams(); if(cur) $("cams").value=cur;
+}
+$("cams").onchange = async ()=>{ camChosen=true; if(video.srcObject){ try{ await openCam(); }catch(e){ $("msg").textContent="⚠️ "+e.message; } } };
+$("flip").onclick = async ()=>{
+  facing = facing==="user" ? "environment" : "user"; camChosen=false;
+  if(!isMobile){ // en PC: pasar a la siguiente cámara de la lista
+    const o=$("cams"); if(o.options.length>1){ o.selectedIndex=(o.selectedIndex+1)%o.options.length; camChosen=true; }
+  }
+  if(video.srcObject){ try{ await openCam(); }catch(e){ $("msg").textContent="⚠️ "+e.message; } }
+  else $("flip").textContent = facing==="user" ? "🔄 Cambiar a cámara trasera" : "🔄 Cambiar a cámara frontal";
+};
+
 $("start").onclick = async ()=>{
   if(!who){ $("msg").textContent="👆 Primero elige quién entrena"; return; }
   try{
     if(!landmarker) await init();
-    if(video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
-    const id=$("cams").value;
-    video.srcObject = await navigator.mediaDevices.getUserMedia({video: id?{deviceId:{exact:id},width:1280,height:720}:{width:1280,height:720}});
-    await video.play();
-    await listCams(); if(id) $("cams").value=id;
+    await openCam();
     resetGate(); reps=0; $("count").textContent=0;
     if(!running){ running=true; loop(); }
     if(ex==="steps"){ captureSteps(); return; }
@@ -209,39 +232,64 @@ function drawCups(){
   ctx.lineWidth=4; ctx.strokeStyle="#4cc9f0"; ctx.font="28px system-ui"; ctx.fillStyle="#4cc9f0";
   cups.forEach(c=>{ ctx.strokeRect(c.x,c.y,c.w,c.h); });
 }
+// Fases: show (mostrar botella) → ready → drink (boca + inclinación) → lower (bajar) → cuenta
+let wPhase="show", phaseT=0, tiltMs=0, lastWT=0, baseTilt=0, baseAspect=1, awaySince=0;
+function waterReset(){ wPhase="show"; phaseT=0; tiltMs=0; awaySince=0; }
+const bar = f => "▰".repeat(Math.round(f*10))+"▱".repeat(10-Math.round(f*10));
 function waterStep(lm){
-  const now=performance.now(), W=canvas.width, H=canvas.height;
+  const now=performance.now(), W=canvas.width, H=canvas.height, dt=lastWT?Math.min(now-lastWT,100):0; lastWT=now;
   if(detector && now-lastDet>300){
     lastDet=now;
     const d=detector.detectForVideo(video, now);
     cups=(d.detections||[]).map(x=>({x:x.boundingBox.originX,y:x.boundingBox.originY,w:x.boundingBox.width,h:x.boundingBox.height}));
     if(cups.length) cupSeenAt=now;
   }
-  const armed = now-cupSeenAt < 6000;          // botella vista en los últimos 6 s
-  let atMouth=false;
-  if(lm){
-    const P=i=>({x:lm[i].x*W, y:lm[i].y*H, v:lm[i].visibility??0});
-    // Referencia = tamaño de la cara (funciona de lejos y en modo selfie)
-    const face=Math.max(Math.hypot(P(7).x-P(8).x,P(7).y-P(8).y), 2.5*Math.hypot(P(2).x-P(5).x,P(2).y-P(5).y));
-    const mouth={x:(P(9).x+P(10).x)/2, y:(P(9).y+P(10).y)/2};
-    if(face/W < 0.05){ $("msg").textContent="Acércate un poco 👣"; return; }
-    const wristNear = [P(15),P(16)].some(w=>w.v>0.3 && Math.hypot(w.x-mouth.x,w.y-mouth.y) < 1.6*face);
-    const m=0.3*face;
-    const cupOnMouth = cups.some(c=>mouth.x>c.x-m && mouth.x<c.x+c.w+m && mouth.y>c.y-m && mouth.y<c.y+c.h+m);
-    atMouth = wristNear || cupOnMouth;
-  } else if(armed){
-    // Muy cerca: la botella tapa la cara y se pierde la pose → botella grande en el centro-superior
-    atMouth = cups.some(c=>c.w>0.25*W && c.y < 0.5*H);
-  }
-  if(atMouth && armed){
-    lastCond=now;
-    if(!sipSince) sipSince=now;
-    const t=(now-sipSince)/1000;
-    if(!sipDone) $("msg").textContent=`💧 Tomando… ${t.toFixed(1)} s`;
-    if(!sipDone && now-sipSince>1500){ sipDone=true; rep(); }
-  } else if(now-lastCond>1000){
-    sipSince=null; sipDone=false;
-    $("msg").textContent = armed ? "✅ Botella lista — tómala" : "🥤 Muestra tu botella a la cámara";
+  if(!lm){ if(wPhase==="show") $("msg").textContent="🙂 Necesito ver tu cara"; return; }
+  const P=i=>({x:lm[i].x*W, y:lm[i].y*H, v:lm[i].visibility??0});
+  const face=Math.max(Math.hypot(P(7).x-P(8).x,P(7).y-P(8).y), 2.5*Math.hypot(P(2).x-P(5).x,P(2).y-P(5).y));
+  if(face/W < 0.05){ $("msg").textContent="Acércate un poco 👣"; return; }
+  const mouth={x:(P(9).x+P(10).x)/2, y:(P(9).y+P(10).y)/2};
+  const tilt=((P(7).y+P(8).y)/2 - P(0).y)/face;          // sube al inclinar la cabeza hacia atrás
+  const m=0.3*face;
+  const cupMouth = cups.find(c=>mouth.x>c.x-m && mouth.x<c.x+c.w+m && mouth.y>c.y-m && mouth.y<c.y+c.h+m);
+  const cupLow   = cups.find(c=>(c.y+c.h/2) > mouth.y+0.6*face);
+  const wristD   = Math.min(...[P(15),P(16)].filter(w=>w.v>0.3).map(w=>Math.hypot(w.x-mouth.x,w.y-mouth.y)), 1e9);
+  const atMouth  = !!cupMouth || wristD < 1.4*face;
+  const armed    = now-cupSeenAt < 8000;
+
+  if(wPhase!=="show" && !armed){ waterReset(); }
+  switch(wPhase){
+    case "show":
+      if(cupLow && !cupMouth){
+        if(!phaseT) phaseT=now;
+        $("msg").textContent=`1️⃣ Botella detectada ${bar(Math.min(1,(now-phaseT)/800))}`;
+        if(now-phaseT>800){ wPhase="ready"; baseTilt=tilt; baseAspect=cupLow.w/cupLow.h; say("Botella lista"); }
+      } else { phaseT=0; $("msg").textContent="1️⃣ Muestra tu botella a la altura del pecho 🥤"; }
+      break;
+    case "ready":
+      $("msg").textContent="2️⃣ Llévala a la boca e inclina para tomar 💧";
+      if(cupLow) baseTilt = baseTilt*0.9 + tilt*0.1;          // recalibra con la botella abajo
+      if(atMouth){ wPhase="drink"; tiltMs=0; awaySince=0; }
+      break;
+    case "drink":{
+      const aspect = cupMouth ? cupMouth.w/cupMouth.h : 0;
+      const tiltOK = (tilt-baseTilt) > 0.08 || (aspect && aspect > baseAspect*1.3);
+      if(atMouth){
+        awaySince=0;
+        if(tiltOK) tiltMs+=dt;
+        $("msg").textContent = tiltOK ? `2️⃣ Tomando… ${bar(Math.min(1,tiltMs/1200))}` : "2️⃣ Inclina un poco más ↖️";
+        if(tiltMs>=1200){ wPhase="lower"; $("msg").textContent="3️⃣ Bien, ahora baja la botella ⬇️"; }
+      } else {
+        if(!awaySince) awaySince=now;
+        if(now-awaySince>800){ wPhase="ready"; $("msg").textContent="Sorbo incompleto: inclina más tiempo"; }
+      }
+      break;}
+    case "lower":
+      if(cupLow || wristD > 2.5*face){
+        if(!awaySince) awaySince=now;
+        if(now-awaySince>400){ rep(); wPhase="ready"; awaySince=0; }
+      } else { awaySince=0; $("msg").textContent="3️⃣ Baja la botella ⬇️"; }
+      break;
   }
 }
 
