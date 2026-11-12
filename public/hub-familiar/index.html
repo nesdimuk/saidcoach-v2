@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub Familiar · Contador de reps</title>
+<style>
+  :root{--bg:#0f1220;--card:#1a1f35;--acc:#ffb703;--ok:#2ec4b6;--txt:#f1f1f1;--mut:#9aa3c0}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,Segoe UI,Roboto,sans-serif}
+  body{background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
+  h1{font-size:22px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  button{border:none;border-radius:16px;padding:14px 20px;font-size:18px;font-weight:700;cursor:pointer;background:var(--card);color:var(--txt)}
+  button.sel{background:var(--acc);color:#111}
+  main{flex:1;display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 20px 20px;min-height:0}
+  .stage{position:relative;background:#000;border-radius:20px;overflow:hidden}
+  video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .big{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:110px;font-weight:900;text-shadow:0 4px 20px #000}
+  .msg{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:#000a;padding:10px 18px;border-radius:12px;font-size:20px;white-space:nowrap}
+  aside{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
+  .card{background:var(--card);border-radius:20px;padding:16px}
+  .card h2{font-size:16px;color:var(--mut);margin-bottom:10px}
+  .who button{flex:1 1 45%;font-size:20px}
+  .score{display:flex;justify-content:space-between;padding:8px 0;font-size:18px;border-bottom:1px solid #ffffff14}
+  .score b{color:var(--acc)}
+  select{width:100%;padding:10px;border-radius:12px;font-size:16px;background:#0f1220;color:var(--txt);border:1px solid #333}
+  #start{background:var(--ok);color:#111;width:100%;font-size:22px}
+  .lvl{font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏠 Hub Familiar · Misiones de movimiento</h1>
+  <div class="row" id="exBtns">
+    <button data-ex="squat" class="sel">🦵 Sentadillas</button>
+    <button data-ex="pushup">💪 Flexiones</button>
+    <button data-ex="water">💧 Agua</button>
+    <button data-ex="steps">👟 Pasos</button>
+  </div>
+</header>
+<main>
+  <div class="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="big" id="count">0</div>
+    <div id="ocrBox" style="display:none;position:absolute;inset:0;background:#000c;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-size:22px">
+      <img id="ocrImg" style="max-width:60%;max-height:40%;border-radius:12px;border:2px solid #fff3">
+      <div>¿Cuántos pasos?</div>
+      <input id="ocrVal" inputmode="numeric" style="font-size:44px;width:260px;text-align:center;border-radius:14px;border:none;padding:8px">
+      <div class="row"><button id="ocrOk" style="background:#2ec4b6;color:#111">✅ Confirmar</button><button id="ocrRetry">🔄 Otra foto</button><button id="ocrCancel">✖</button></div>
+    </div>
+    <div class="msg" id="msg">Elige quién eres y presiona ▶ Empezar</div>
+  </div>
+  <aside>
+    <div class="card"><h2>¿QUIÉN ENTRENA?</h2><div class="row who" id="who"></div></div>
+    <div class="card">
+      <h2>CÁMARA</h2>
+      <select id="cams"></select><br><br>
+      <button id="start">▶ Empezar</button>
+      <label id="upWrap" style="display:none;margin-top:10px"><span style="display:block;text-align:center;background:#3a86ff;border-radius:16px;padding:14px;font-weight:700;font-size:18px;cursor:pointer">📁 Subir captura de pasos</span>
+        <input id="upFile" type="file" accept="image/*" style="display:none"></label>
+    </div>
+    <div class="card"><h2>🏆 PUNTOS DE HOY</h2><div id="board"></div></div>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script type="module">
+import {PoseLandmarker, ObjectDetector, FilesetResolver, DrawingUtils} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+const FAMILY = ["Papá","Mamá","Gabriel","Martina"];
+const EMOJI = {"Papá":"🧔","Mamá":"👩","Gabriel":"⚽","Martina":"🌟"};
+// Umbrales (grados). Ajustables tras probar.
+const RULES = {
+  squat:  {joint:[[23,25,27],[24,26,28]], down:125, up:155, name:"sentadilla", pts:1},
+  pushup: {joint:[[11,13,15],[12,14,16]], down:90,  up:155, name:"flexión",   pts:2},
+  water:  {name:"sorbo", pts:3},
+  steps:  {name:"pasos", pts:0},
+};
+
+const $ = id => document.getElementById(id);
+const video=$("video"), canvas=$("canvas"), ctx=canvas.getContext("2d");
+let ex="squat", who=null, reps=0, stage="up", smooth=null, running=false, landmarker, draw;
+let detector=null, cups=[], lastDet=0, cupSeenAt=-1e9, sipSince=null, sipDone=false, lastCond=0;
+let ready=false, stillSince=null, topHip=null, downAt=0, maxHip=0;
+function resetGate(){ ready=false; stillSince=null; topHip=null; maxHip=0; stage="up"; smooth=null; }
+const today = new Date().toISOString().slice(0,10);
+let scores = load();
+
+function load(){ try{ const s=JSON.parse(localStorage.getItem("hub-"+today)); if(s) return s; }catch(e){} return Object.fromEntries(FAMILY.map(f=>[f,{pts:0,squat:0,pushup:0,water:0,steps:0,stepPts:0}])); }
+function save(){ try{ localStorage.setItem("hub-"+today, JSON.stringify(scores)); }catch(e){} }
+
+function renderWho(){
+  $("who").innerHTML = FAMILY.map(f=>`<button class="${f===who?'sel':''}" data-f="${f}">${EMOJI[f]} ${f}</button>`).join("");
+  $("who").querySelectorAll("button").forEach(b=>b.onclick=()=>{who=b.dataset.f; reps=0; resetGate(); $("count").textContent=0; renderWho(); say(`Hola ${who}`);});
+}
+function renderBoard(){
+  const sorted = Object.entries(scores).sort((a,b)=>b[1].pts-a[1].pts);
+  $("board").innerHTML = sorted.map(([f,s],i)=>`<div class="score"><span>${i===0&&s.pts>0?'👑':''} ${EMOJI[f]} ${f}<br><span class="lvl">${s.squat} sentadillas · ${s.pushup} flexiones · ${s.water||0} 💧 · ${(s.steps||0).toLocaleString("es-CL")} 👟 · Nivel ${1+Math.floor(s.pts/50)}</span></span><b>${s.pts}</b></div>`).join("");
+}
+document.querySelectorAll("#exBtns button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#exBtns button").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel"); ex=b.dataset.ex; $("upWrap").style.display = ex==="steps"?"block":"none"; $("start").textContent = ex==="steps"?"📸 Foto en vivo con cámara":"▶ Empezar"; reps=0; resetGate(); $("count").textContent=0;
+  $("msg").textContent = ex==="pushup" ? "Ponte de lado a la cámara" : ex==="water" ? "Frente a la cámara con tu vaso o botella" : ex==="steps" ? "Presiona ▶ Empezar y muestra la pantalla con tus pasos" : "Ponte de frente o de lado, cuerpo completo";
+});
+
+function say(t){ try{ const u=new SpeechSynthesisUtterance(t); u.lang="es-CL"; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+
+function angle(a,b,c){
+  const r=Math.atan2(c.y-b.y,c.x-b.x)-Math.atan2(a.y-b.y,a.x-b.x);
+  let d=Math.abs(r*180/Math.PI); return d>180?360-d:d;
+}
+
+async function listCams(){
+  const devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput");
+  $("cams").innerHTML = devs.map((d,i)=>`<option value="${d.deviceId}">${d.label||"Cámara "+(i+1)}</option>`).join("");
+  if(devs.length>1) $("cams").selectedIndex = devs.length-1; // suele ser la USB
+}
+
+async function init(){
+  $("msg").textContent="Cargando IA…";
+  const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  const opts = d => ({baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate:d}, runningMode:"VIDEO", numPoses:1});
+  try{ landmarker = await PoseLandmarker.createFromOptions(files, opts("GPU")); }
+  catch(e){ landmarker = await PoseLandmarker.createFromOptions(files, opts("CPU")); }
+  draw = new DrawingUtils(ctx);
+  const dopts = d => ({baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite", delegate:d}, runningMode:"VIDEO", scoreThreshold:0.3, categoryAllowlist:["cup","bottle","wine glass"]});
+  try{ detector = await ObjectDetector.createFromOptions(files, dopts("GPU")); }
+  catch(e){ try{ detector = await ObjectDetector.createFromOptions(files, dopts("CPU")); }catch(e2){ console.warn("Sin detector de vasos", e2); } }
+}
+
+$("start").onclick = async ()=>{
+  if(!who){ $("msg").textContent="👆 Primero elige quién entrena"; return; }
+  try{
+    if(!landmarker) await init();
+    if(video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
+    const id=$("cams").value;
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: id?{deviceId:{exact:id},width:1280,height:720}:{width:1280,height:720}});
+    await video.play();
+    await listCams(); if(id) $("cams").value=id;
+    resetGate(); reps=0; $("count").textContent=0;
+    if(!running){ running=true; loop(); }
+    if(ex==="steps"){ captureSteps(); return; }
+    $("msg").textContent = ex==="water" ? `${who}: toma agua frente a la cámara 💧` : `${who}: ponte de pie y quieto para empezar`;
+  }catch(e){ $("msg").textContent="⚠️ "+e.message; }
+};
+
+let lastT=-1;
+function loop(){
+  if(!running) return;
+  if(video.currentTime!==lastT && video.videoWidth){
+    lastT=video.currentTime;
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(ex==="steps"){ drawGuide(); requestAnimationFrame(loop); return; }
+    const res=landmarker.detectForVideo(video, performance.now());
+    const lm=res.landmarks?.[0];
+    if(lm){
+      draw.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {color:"#2ec4b6", lineWidth:4});
+      draw.drawLandmarks(lm, {color:"#ffb703", radius:4});
+      if(ex==="water"){ waterStep(lm); }
+      else {
+      const R=RULES[ex];
+      // usa el lado más visible
+      const vis = j => j.reduce((s,i)=>s+(lm[i].visibility??0),0);
+      const side = vis(R.joint[0])>=vis(R.joint[1]) ? R.joint[0] : R.joint[1];
+      const inFrame = side.every(i=>lm[i].x>0.02&&lm[i].x<0.98&&lm[i].y>0.02&&lm[i].y<0.98);
+      if(vis(side)/3 > 0.7 && inFrame){
+        const a = angle(lm[side[0]],lm[side[1]],lm[side[2]]);
+        smooth = smooth==null ? a : smooth*0.6 + a*0.4;
+        const now = performance.now();
+        const hipY = ex==="squat" ? lm[side[0]].y : 0;
+        const thigh = Math.hypot(lm[side[0]].x-lm[side[1]].x, lm[side[0]].y-lm[side[1]].y);
+        // 1) Antes de contar: quedarse quieto y de pie ~1 s
+        if(!ready){
+          if(smooth>R.up){
+            if(!stillSince) stillSince=now;
+            const left = Math.ceil((1200-(now-stillSince))/400);
+            $("msg").textContent = left>0 ? `Quieto… ${left}` : "¡Listo! Comienza";
+            if(now-stillSince>1200){ ready=true; stage="up"; topHip=hipY; say("Listo"); }
+          } else { stillSince=null; $("msg").textContent="Ponte de pie y quieto para empezar"; }
+        } else {
+          if(stage==="up"){
+            if(smooth>R.up) topHip = topHip==null?hipY:Math.min(topHip,hipY);
+            if(smooth<R.down){ stage="down"; downAt=now; }
+          } else if(stage==="down" && smooth>R.up){
+            stage="up";
+            // 2) Validar: bajada mínima de cadera (solo sentadilla) y duración mínima
+            const dropOK = ex!=="squat" || (maxHip - topHip) > thigh*0.25;
+            if(dropOK && now-downAt>250) rep();
+            maxHip = 0;
+          }
+          if(stage==="down") maxHip = Math.max(maxHip, hipY);
+        }
+      } else {
+        stillSince=null;
+        $("msg").textContent = ready ? "No te veo completo, vuelve al cuadro" : "Aléjate un poco: necesito ver tu cuerpo completo";
+      }
+      }
+    }
+    if(ex==="water") drawCups();
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---------- 💧 Detección de sorbos ----------
+function drawCups(){
+  ctx.lineWidth=4; ctx.strokeStyle="#4cc9f0"; ctx.font="28px system-ui"; ctx.fillStyle="#4cc9f0";
+  cups.forEach(c=>{ ctx.strokeRect(c.x,c.y,c.w,c.h); });
+}
+function waterStep(lm){
+  const now=performance.now(), W=canvas.width, H=canvas.height;
+  if(detector && now-lastDet>300){
+    lastDet=now;
+    const d=detector.detectForVideo(video, now);
+    cups=(d.detections||[]).map(x=>({x:x.boundingBox.originX,y:x.boundingBox.originY,w:x.boundingBox.width,h:x.boundingBox.height}));
+    if(cups.length) cupSeenAt=now;
+  }
+  const P=i=>({x:lm[i].x*W, y:lm[i].y*H, v:lm[i].visibility??0});
+  const nose=P(0), sw=Math.hypot(P(11).x-P(12).x, P(11).y-P(12).y);
+  // 1) Distancia: hombros deben ocupar 15–45% del ancho
+  if(sw/W < 0.15){ $("msg").textContent="Acércate un poco (1–1,5 m) 👣"; return; }
+  if(sw/W > 0.45){ $("msg").textContent="Aléjate un poco (1–1,5 m) 👣"; return; }
+  const armed = now-cupSeenAt < 6000;          // botella vista en los últimos 6 s
+  const wrists=[P(15),P(16)].filter(w=>w.v>0.3);
+  const atMouth = wrists.some(w=>Math.hypot(w.x-nose.x,w.y-nose.y) < 1.0*sw);
+  if(atMouth && armed){
+    lastCond=now;
+    if(!sipSince) sipSince=now;
+    const t=(now-sipSince)/1000;
+    if(!sipDone) $("msg").textContent=`💧 Tomando… ${t.toFixed(1)} s`;
+    if(!sipDone && now-sipSince>1500){ sipDone=true; rep(); }
+  } else if(now-lastCond>1000){
+    sipSince=null; sipDone=false;
+    $("msg").textContent = cups.length ? "✅ Botella lista — tómala" : armed ? "✅ Botella lista — tómala" : "🥤 Muestra tu botella a la cámara (altura del pecho)";
+  }
+}
+
+// ---------- 👟 Lectura de pasos por OCR ----------
+const G={x:0.25,y:0.2,w:0.5,h:0.6}; // zona guía (fracción del cuadro)
+function drawGuide(){
+  const W=canvas.width,H=canvas.height;
+  ctx.setLineDash([16,10]); ctx.lineWidth=5; ctx.strokeStyle="#ffb703";
+  ctx.strokeRect(G.x*W,G.y*H,G.w*W,G.h*H); ctx.setLineDash([]);
+}
+let ocrWorker=null, capturing=false;
+async function getWorker(){
+  if(!ocrWorker){
+    $("msg").textContent="Cargando lector de números…";
+    ocrWorker = await Tesseract.createWorker("eng");
+    await ocrWorker.setParameters({tessedit_char_whitelist:"0123456789.,", tessedit_pageseg_mode:"11"});
+  }
+  return ocrWorker;
+}
+function crop(invert, src){
+  let c, x;
+  if(src){ // imagen subida: usar completa, escalar a ~1600 px de ancho
+    const k=Math.min(2, 1600/src.width); c=document.createElement("canvas");
+    c.width=src.width*k; c.height=src.height*k; x=c.getContext("2d"); x.drawImage(src,0,0,c.width,c.height);
+  } else {
+    const W=video.videoWidth,H=video.videoHeight, sx=G.x*W, sy=G.y*H, sw=G.w*W, sh=G.h*H;
+    c=document.createElement("canvas"); c.width=sw*2; c.height=sh*2;
+    x=c.getContext("2d"); x.drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);
+  }
+  const im=x.getImageData(0,0,c.width,c.height), d=im.data;
+  for(let i=0;i<d.length;i+=4){
+    let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    g = g>128?255:0; if(invert) g=255-g;          // blanco/negro alto contraste
+    d[i]=d[i+1]=d[i+2]=g;
+  }
+  x.putImageData(im,0,0); return c;
+}
+function bestNumber(text){
+  const nums=(text.match(/\d{1,3}(?:[.,]\d{3})+|\d{3,6}/g)||[])
+    .map(t=>parseInt(t.replace(/[.,]/g,""),10)).filter(n=>n>=50&&n<=99999);
+  return nums.length? Math.max(...nums) : null;   // los pasos suelen ser el número más grande
+}
+async function captureSteps(){
+  if(capturing) return; capturing=true;
+  try{
+    const w=await getWorker();
+    for(const n of [3,2,1]){ $("msg").textContent=`📱 Pantalla dentro del recuadro… ${n}`; say(String(n)); await new Promise(r=>setTimeout(r,1000)); }
+    $("msg").textContent="Leyendo… 🔎";
+    const snap=crop(false), snapInv=crop(true);
+    const [a,b]=await Promise.all([w.recognize(snap), w.recognize(snapInv)].map(p=>p.catch(()=>({data:{text:""}}))));
+    const n = bestNumber(a.data.text+" "+b.data.text);
+    // vista previa a color
+    const W=video.videoWidth,H=video.videoHeight, pv=document.createElement("canvas");
+    pv.width=G.w*W; pv.height=G.h*H; pv.getContext("2d").drawImage(video,G.x*W,G.y*H,G.w*W,G.h*H,0,0,pv.width,pv.height);
+    $("ocrImg").src=pv.toDataURL("image/jpeg",0.7);
+    $("ocrVal").value = n ?? "";
+    $("ocrBox").style.display="flex";
+    $("msg").textContent = n ? "Revisa el número y confirma" : "No pude leerlo: escríbelo o saca otra foto";
+    say(n ? `${n} pasos. ¿Correcto?` : "No pude leerlo");
+  }catch(e){ $("msg").textContent="⚠️ OCR: "+e.message; }
+  capturing=false;
+}
+$("ocrOk").onclick=()=>{
+  const v=parseInt(String($("ocrVal").value).replace(/\D/g,""),10);
+  if(!v){ $("ocrVal").focus(); return; }
+  const s=scores[who], newPts=Math.floor(v/1000) + (v>=8000?5:0); // 1 pt c/1.000 + bonus meta 8.000
+  s.pts += newPts-(s.stepPts||0); s.stepPts=newPts; s.steps=v; save(); renderBoard();
+  $("ocrBox").style.display="none"; $("count").textContent=v.toLocaleString("es-CL");
+  $("msg").textContent=`👟 ${v.toLocaleString("es-CL")} pasos · ${newPts} pts${v>=8000?" · 🎯 ¡Meta!":""}`;
+  say(v>=8000?`Meta cumplida ${who}`:`Registrado ${who}`);
+};
+$("upFile").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  if(!who){ $("msg").textContent="👆 Primero elige quién eres"; return; }
+  if(capturing) return; capturing=true;
+  try{
+    const img=await createImageBitmap(f), w=await getWorker();
+    $("msg").textContent="Leyendo captura… 🔎";
+    const [a,b]=await Promise.all([w.recognize(crop(false,img)), w.recognize(crop(true,img))].map(p=>p.catch(()=>({data:{text:""}}))));
+    const n=bestNumber(a.data.text+" "+b.data.text);
+    $("ocrImg").src=URL.createObjectURL(f); $("ocrVal").value=n??"";
+    $("ocrBox").style.display="flex";
+    $("msg").textContent = n ? "Revisa el número y confirma" : "No pude leerlo: escríbelo";
+  }catch(err){ $("msg").textContent="⚠️ "+err.message; }
+  capturing=false;
+};
+$("ocrRetry").onclick=()=>{ $("ocrBox").style.display="none"; captureSteps(); };
+$("ocrCancel").onclick=()=>{ $("ocrBox").style.display="none"; $("msg").textContent="Cancelado"; };
+
+function rep(){
+  reps++; $("count").textContent=reps;
+  const s=scores[who]; s[ex]=(s[ex]||0)+1; s.pts+=RULES[ex].pts; save(); renderBoard();
+  if(ex==="water"){ say(`Bien ${who}, sorbo ${reps}`); $("msg").textContent=`💧 Sorbo ${reps} · +${RULES[ex].pts} pts`; return; }
+  if(reps%10===0){ say(`${reps}! Excelente ${who}`); $("msg").textContent=`🔥 ${reps} ${RULES[ex].name}s · +${RULES[ex].pts*10} pts`; }
+  else { say(String(reps)); $("msg").textContent=`+${RULES[ex].pts} pts`; }
+}
+
+renderWho(); renderBoard();
+navigator.mediaDevices?.enumerateDevices && listCams();
+</script>
+</body>
+</html>
