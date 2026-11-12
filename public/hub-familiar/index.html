@@ -102,7 +102,7 @@ function renderBoard(){
 document.querySelectorAll("#exBtns button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("#exBtns button").forEach(x=>x.classList.remove("sel"));
   b.classList.add("sel"); ex=b.dataset.ex; $("upWrap").style.display = ex==="steps"?"block":"none"; $("start").textContent = ex==="steps"?"📸 Foto en vivo con cámara":"▶ Empezar"; reps=0; resetGate(); $("count").textContent=0;
-  $("msg").textContent = ex==="pushup" ? "Ponte de lado a la cámara" : ex==="water" ? "Frente a la cámara con tu vaso o botella" : ex==="steps" ? "Presiona ▶ Empezar y muestra la pantalla con tus pasos" : "Ponte de frente o de lado, cuerpo completo";
+  $("msg").textContent = ex==="pushup" ? "Ponte de lado a la cámara" : ex==="water" ? "Frente a la cámara con tu botella (de lejos o tipo selfie)" : ex==="steps" ? "Presiona ▶ Empezar y muestra la pantalla con tus pasos" : "Ponte de frente o de lado, cuerpo completo";
 });
 
 function say(t){ try{ const u=new SpeechSynthesisUtterance(t); u.lang="es-CL"; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
@@ -198,7 +198,7 @@ function loop(){
         $("msg").textContent = ready ? "No te veo completo, vuelve al cuadro" : "Aléjate un poco: necesito ver tu cuerpo completo";
       }
       }
-    }
+    } else if(ex==="water"){ waterStep(null); }
     if(ex==="water") drawCups();
   }
   requestAnimationFrame(loop);
@@ -217,14 +217,22 @@ function waterStep(lm){
     cups=(d.detections||[]).map(x=>({x:x.boundingBox.originX,y:x.boundingBox.originY,w:x.boundingBox.width,h:x.boundingBox.height}));
     if(cups.length) cupSeenAt=now;
   }
-  const P=i=>({x:lm[i].x*W, y:lm[i].y*H, v:lm[i].visibility??0});
-  const nose=P(0), sw=Math.hypot(P(11).x-P(12).x, P(11).y-P(12).y);
-  // 1) Distancia: hombros deben ocupar 15–45% del ancho
-  if(sw/W < 0.15){ $("msg").textContent="Acércate un poco (1–1,5 m) 👣"; return; }
-  if(sw/W > 0.45){ $("msg").textContent="Aléjate un poco (1–1,5 m) 👣"; return; }
   const armed = now-cupSeenAt < 6000;          // botella vista en los últimos 6 s
-  const wrists=[P(15),P(16)].filter(w=>w.v>0.3);
-  const atMouth = wrists.some(w=>Math.hypot(w.x-nose.x,w.y-nose.y) < 1.0*sw);
+  let atMouth=false;
+  if(lm){
+    const P=i=>({x:lm[i].x*W, y:lm[i].y*H, v:lm[i].visibility??0});
+    // Referencia = tamaño de la cara (funciona de lejos y en modo selfie)
+    const face=Math.max(Math.hypot(P(7).x-P(8).x,P(7).y-P(8).y), 2.5*Math.hypot(P(2).x-P(5).x,P(2).y-P(5).y));
+    const mouth={x:(P(9).x+P(10).x)/2, y:(P(9).y+P(10).y)/2};
+    if(face/W < 0.05){ $("msg").textContent="Acércate un poco 👣"; return; }
+    const wristNear = [P(15),P(16)].some(w=>w.v>0.3 && Math.hypot(w.x-mouth.x,w.y-mouth.y) < 1.6*face);
+    const m=0.3*face;
+    const cupOnMouth = cups.some(c=>mouth.x>c.x-m && mouth.x<c.x+c.w+m && mouth.y>c.y-m && mouth.y<c.y+c.h+m);
+    atMouth = wristNear || cupOnMouth;
+  } else if(armed){
+    // Muy cerca: la botella tapa la cara y se pierde la pose → botella grande en el centro-superior
+    atMouth = cups.some(c=>c.w>0.25*W && c.y < 0.5*H);
+  }
   if(atMouth && armed){
     lastCond=now;
     if(!sipSince) sipSince=now;
@@ -233,7 +241,7 @@ function waterStep(lm){
     if(!sipDone && now-sipSince>1500){ sipDone=true; rep(); }
   } else if(now-lastCond>1000){
     sipSince=null; sipDone=false;
-    $("msg").textContent = cups.length ? "✅ Botella lista — tómala" : armed ? "✅ Botella lista — tómala" : "🥤 Muestra tu botella a la cámara (altura del pecho)";
+    $("msg").textContent = armed ? "✅ Botella lista — tómala" : "🥤 Muestra tu botella a la cámara";
   }
 }
 
